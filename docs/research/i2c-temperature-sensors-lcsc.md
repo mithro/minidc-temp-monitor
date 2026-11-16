@@ -10,7 +10,7 @@ The best bulk part is a TMP175-class sensor: 27 addresses on one bus, ±0.5 °C,
 
 | Role | Pick | Why | $ @100 |
 | --- | --- | --- | --- |
-| Bulk temperature points | TMP175AIDR(UMW) C5158046, second source NST175H-QSPR C917444 | 27 per bus, ±0.5 °C, 9k+ stock. Two buses give 54 points for about $21 of sensors | 0.38 to 0.42 |
+| Bulk temperature points | TMP175AIDR(UMW) C5158046, second source NST175H-QSPR C917444 | 27 per bus, ±0.5 °C, about 9k in stock (10k+ for the MSOP variant C5158047). Two buses give 54 points for about $21 of sensors | 0.38 to 0.42 |
 | Bulk, genuine TI only | TMP75AIDR C30389 | Cheapest genuine TI part, ±0.5 °C, 8 per bus (64 behind one PCA9548A mux) | 0.23 |
 | Small flex or cable strips | TMP102AIDRLR C99269 | SOT-563, 36k stock, ±0.5 °C, 4 per bus | 0.26 |
 | Calibration reference | TMP117AIDRVR C699536 | ±0.1 °C, one or two per aisle to check the cheap parts against | 0.73 |

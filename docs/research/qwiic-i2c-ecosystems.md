@@ -9,7 +9,7 @@ Nov 16, 2026 · Tim 'mithro' Ansell
 The de facto standard for plug-and-play I2C sensors is a **4-pin JST SH 1.0 mm connector wired GND, V+, SDA, SCL**, shared by SparkFun Qwiic and Adafruit STEMMA QT. Building our sensor boards around that connector makes them compatible with hundreds of off-the-shelf boards, cables, hubs and extenders at no extra cost.
 
 - **Qwiic** is 3.3 V power and logic only, with pull-ups on every board. **STEMMA QT** uses the same plug but accepts 3-5 V, with a regulator and level shifter on each board.
-- The 2.0 mm systems (Grove, M5Stack, STEMMA 4-pin, DFRobot Gravity) all use different pin orders. Gravity is reversed relative to STEMMA and can damage boards if mixed.
+- The 2.0 mm systems use two different connector bodies. Grove, M5Stack and STEMMA 4-pin share one pin order (SCL, SDA, V+, GND), but DFRobot Gravity uses the same JST PH plug as STEMMA with its power and I2C pins reversed, which can damage boards if mixed.
 - Plain I2C over Qwiic cables is only good for about a metre. To span an aisle, the ecosystems use a **PCA9615 differential extender over Ethernet cable** (SparkFun QwiicBus), which SparkFun reports working over 200 ft at 100 kHz.
 - Address clashes are solved with address-select jumpers first, and a **TCA9548A 8-way mux** second.
 - Recommendation: one small sensor board with two Qwiic connectors (pass-through), a TMP175-class sensor with 27 addresses, pull-ups off by default, and a PCA9615 + RJ45 link from a per-aisle hub. Details are in the implications section below.
@@ -39,7 +39,7 @@ The Grove and Qwiic pin orders are the same sequence counted from opposite ends,
 The 1.0 mm JST SH (genuine part SM04B-SRSS-TB, right-angle SMD) is the one worth putting on our boards. Most Qwiic and STEMMA QT boards place two of them so modules daisy-chain; SparkFun's [Qwiic page](https://www.sparkfun.com/qwiic) notes the plug is polarized and sells cables in 50, 100, 200 and 500 mm lengths.
 
 - **JST SH 1.0 mm (Qwiic, STEMMA QT, Modulino):** smallest footprint, cheap pre-made cables everywhere, but the latch is friction-only and the crimps are fine-pitch. Generic SH clones on LCSC are much cheaper than genuine JST; check stock and pricing when we pick the BOM.
-- **2.0 mm (Grove HY2.0, JST PH, Gravity):** sturdier and easier to hand-crimp, but three mutually incompatible pinouts share the same pitch, so a cable from one can plug into another and swap power.
+- **2.0 mm (Grove HY2.0, JST PH, Gravity):** sturdier and easier to hand-crimp, but Gravity and STEMMA 4-pin share the JST PH plug with opposite pin orders, so a cable from one can plug into the other and swap power.
 - **0.1" headers (Breakout Garden, mikroBUS, Pmod, UEXT):** suited to stacking on a host, not to cable runs between racks.
 - **RJ45 (QwiicBus, PCA9615 boards):** the long-distance option; uses standard Cat5/6 patch cables. See the long cable runs section below.
 

@@ -20,8 +20,12 @@ for KiCad, which is the intended PCB tool.
   SparkFun QwiicBus pin use.
 - **Hub:** ESP32 or RP2040 with a TCA9548A mux, separate buses for the
   hot and cold sides.
-- **Humidity and reference:** SHT40 for humidity and a TMP117 as a
-  calibration reference, each on its own mux channel.
+- **Humidity and reference:** SHT40 for humidity on its own mux
+  channel, plus a TMP117 as a calibration reference.
+
+To check before layout: the TMP175/PCT2075 address set may overlap the
+TCA9548A's 0x70-0x77 range, which would limit how many sensors can share
+a bus segment with the mux. Confirm against the datasheets.
 
 Open questions: cable length per aisle, points per rack face, and whether
 5 V tolerance is worth the extra cost.
