@@ -31,10 +31,15 @@ There are two versions of the same board, differing only in the microcontroller:
 
 | Mode | R3, R4 (0R) | R5, R6 (4k7) | Behaviour |
 |---|---|---|---|
-| Shared bus (default) | fitted | not fitted | SDA/SCL pass straight through. All boards share one bus. |
-| Relay | not fitted | fitted | Each board is an I2C target upstream and a bit-banged controller downstream, and forwards traffic. Every hop is a fresh, short bus. |
+| Relay (default) | not fitted | fitted | Each board is an I2C target upstream and a bit-banged controller downstream, and forwards traffic. Every hop is a fresh, short bus, so no separate redriver board is needed. |
+| Shared bus | fitted | not fitted | SDA/SCL pass straight through. All boards share one bus. |
 
-No bus pull-ups are fitted in shared-bus mode. They belong on the hub.
+The BOM and placement files are for the relay fitting. R5 and R6 are the pull-ups
+of the hop to the next board; the hop from the hub to the first board uses the
+pull-ups on the hub. In shared-bus mode no pull-ups are fitted on the boards.
+
+A relay-fitted board with no firmware does not pass the bus on, so the chain
+stops at the first unprogrammed board.
 
 ## Files
 
@@ -67,8 +72,9 @@ Needs KiCad 9 (`kicad-cli` and the `pcbnew` Python module) and numpy.
 
 ## Known gaps in v0.1
 
-- No firmware yet. Self-addressing, the relay mode and the CH32V005 programming
-  window on the shared SCL/SWIO pin are untested ideas until there is some.
+- No firmware yet. The default fitting depends on relay firmware. Self-addressing,
+  the relay mode and the CH32V005 programming window on the shared SCL/SWIO pin
+  are untested ideas until there is some.
 - The routing is machine-made and passes DRC, but has not been tidied by hand.
 - No reference designators on the silkscreen.
 - The placement file rotations have not been checked against JLCPCB's part

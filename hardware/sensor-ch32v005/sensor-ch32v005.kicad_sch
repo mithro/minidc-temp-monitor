@@ -2168,7 +2168,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(dnp no)
+		(dnp yes)
 		(uuid "908e1460-b31c-5373-8b5e-4d76da4a824f")
 		(property "Reference" "R3"
 			(at 96.52 50.8 90)
@@ -2244,7 +2244,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(dnp no)
+		(dnp yes)
 		(uuid "15d3404b-cfb5-56f6-a5a0-0d4d2006cf52")
 		(property "Reference" "R4"
 			(at 111.76 60.96 90)
@@ -2320,7 +2320,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(dnp yes)
+		(dnp no)
 		(uuid "3cdbc702-59dc-52a8-b24d-d05fb11429f8")
 		(property "Reference" "R5"
 			(at 134.62 41.91 0)
@@ -2398,7 +2398,7 @@
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(dnp yes)
+		(dnp no)
 		(uuid "f7455a14-fb55-5aa0-8a21-05197261657c")
 		(property "Reference" "R6"
 			(at 147.32 41.91 0)
@@ -3029,7 +3029,7 @@
 			)
 		)
 	)
-	(text "Shared bus (default): fit R3 and R4"
+	(text "Shared bus: fit R3 and R4 instead"
 		(exclude_from_sim no)
 		(at 86.36 69.85 0)
 		(effects
@@ -3040,7 +3040,7 @@
 		)
 		(uuid "00340ecf-3b58-53df-95d7-b3d1e3c5a61c")
 	)
-	(text "Relay: fit R5 and R6 instead"
+	(text "Relay (default): R5 and R6 fitted"
 		(exclude_from_sim no)
 		(at 152.4 35.56 0)
 		(effects
@@ -5177,7 +5177,7 @@
 		)
 		(uuid "cc197832-74a2-5bb6-8c1d-183758b6a043")
 	)
-	(text "  Shared bus (default): fit R3 and R4 (0R).  Leave R5 and R6 unfitted."
+	(text "  Relay (default): R5 and R6 (4k7) fitted as the pull-ups of the hop to the next board.  R3 and R4 unfitted."
 		(exclude_from_sim no)
 		(at 20.32 177.8 0)
 		(effects
@@ -5188,7 +5188,7 @@
 		)
 		(uuid "16d2230e-d659-582e-ba4c-12463c87ca70")
 	)
-	(text "  Relay: leave R3 and R4 unfitted.  Fit R5 and R6 (4k7) as the downstream pull-ups."
+	(text "  Shared bus: fit R3 and R4 (0R) and remove R5 and R6.  The only pull-ups are then the ones on the hub."
 		(exclude_from_sim no)
 		(at 20.32 180.34 0)
 		(effects
@@ -5199,7 +5199,7 @@
 		)
 		(uuid "393a56c3-47e0-5a28-89ec-6c4a9a847c22")
 	)
-	(text "No bus pull-ups are fitted in shared-bus mode.  They belong on the hub."
+	(text "The hop from the hub to the first board uses the pull-ups on the hub."
 		(exclude_from_sim no)
 		(at 20.32 182.88 0)
 		(effects
