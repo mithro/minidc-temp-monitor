@@ -7,15 +7,22 @@ that is cheap enough to build in quantity from LCSC / JLCPCB parts.
 
 ## Status
 
-Research phase. No hardware design files yet; the `.gitignore` is set up
-for KiCad, which is the intended PCB tool.
+First hardware revision drawn, not yet built. [hardware/](hardware/README.md)
+holds KiCad 9 files for the sensor strip board (v0.1) in two versions, one
+per microcontroller. Both pass ERC and DRC. There is no firmware yet, and no
+boards have been ordered.
 
 ## Current direction (draft, not yet final)
 
-- **Sensor board:** small PCB with a TMP175-class I2C temperature sensor
-  (27 addresses per bus) and two Qwiic / STEMMA QT (JST SH 4-pin)
-  connectors for daisy-chaining, 3.3 V only, pull-ups behind a
-  default-open solder jumper.
+- **Sensor board (drawn):** a 42 x 13 mm pass-through strip with a WCH
+  RISC-V microcontroller (CH32V003 or CH32V005) reading a 100 k NTC
+  thermistor, and a Qwiic / STEMMA QT (JST SH 4-pin) connector at each end
+  for daisy-chaining. Boards are meant to assign their own I2C addresses,
+  so there are no address straps.
+- **Chain:** by default each board relays the bus to the next one (I2C
+  target upstream, bit-banged controller downstream), so every cable is its
+  own short bus. This replaces the separate redriver / mux board that was
+  planned earlier. A shared pass-through bus is a build option.
 - **Aisle link:** PCA9615 differential I2C over RJ45 / Cat5e, following
   SparkFun QwiicBus pin use.
 - **Hub:** ESP32 or RP2040 with a TCA9548A mux, separate buses for the
@@ -23,13 +30,15 @@ for KiCad, which is the intended PCB tool.
 - **Humidity and reference:** SHT40 for humidity on its own mux
   channel, plus a TMP117 as a calibration reference.
 
-To check before layout: the TMP175/PCT2075 address set may overlap the
-TCA9548A's 0x70-0x77 range, which would limit how many sensors can share
-a bus segment with the mux. Confirm against the datasheets.
+The aisle link, hub and humidity items are still the research-phase draft
+and have not been revisited since the sensor board changed to a
+microcontroller.
 
-Open questions: cable length per aisle, points per rack face, and whether
-5 V tolerance is worth the extra cost.
+Open questions: 3.3 V or 5 V on the chain, cable length per aisle, points
+per rack face, and how firmware does self-addressing and the relay.
 
 ## Documentation
 
-See [docs/](docs/README.md) for the research behind these choices.
+See [docs/](docs/README.md) for the earlier research (it predates the
+microcontroller sensor board) and [hardware/](hardware/README.md) for the
+boards.
