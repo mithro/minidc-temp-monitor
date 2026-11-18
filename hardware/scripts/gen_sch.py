@@ -20,7 +20,8 @@ FP_R = 'Resistor_SMD:R_0402_1005Metric'
 FP_C = 'Capacitor_SMD:C_0402_1005Metric'
 FP_J = 'Connector_JST:JST_SH_SM04B-SRSS-TB_1x04-1MP_P1.00mm_Horizontal'
 FP_R0603 = 'Resistor_SMD:R_0603_1608Metric'   # wide enough to bridge over one track
-FP_TP = 'TestPoint:TestPoint_Pad_D1.5mm'
+FP_TP = 'TestPoint:TestPoint_Pad_D1.5mm'        # programming pads, on a 2.54 mm pitch
+FP_TP_SMALL = 'TestPoint:TestPoint_Pad_D1.0mm'  # spare pins
 
 
 # ref: (library, symbol, value, footprint, LCSC part, do-not-populate)
@@ -72,20 +73,20 @@ VARIANTS = {
         title='Temp sensor strip, CH32V005D6U6',
         parts={'U1': ('MCU_WCH_RiscV', 'CH32V005D6U6', 'CH32V005D6U6', 'Package_DFN_QFN:UQFN-12-1EP_2x2mm_P0.4mm_EP1.1x1.1mm', 'C49006243', False),
                'TP1': ('Connector', 'TestPoint', 'SWIO', FP_TP, '', False),
-               'TP4': ('Connector', 'TestPoint', 'NRST', FP_TP, '', False),
-               'TP5': ('Connector', 'TestPoint', 'AUX_A1', FP_TP, '', False),
-               'TP6': ('Connector', 'TestPoint', 'AUX_PC6', FP_TP, '', False)},
+               'TP4': ('Connector', 'TestPoint', 'NRST', FP_TP_SMALL, '', False),
+               'TP5': ('Connector', 'TestPoint', 'AUX_A1', FP_TP_SMALL, '', False),
+               'TP6': ('Connector', 'TestPoint', 'AUX_PC7', FP_TP_SMALL, '', False)},
         pins={'U1': {'4': 'VDD', '13': 'GND', '3': 'SDA_UP', '10': 'SCL_UP', '5': 'SDA_DN', '6': 'SCL_DN',
-                     '7': 'NTC_ADC', '9': 'NTC_DRV', '2': 'LED_K', '1': 'AUX_A1', '8': 'AUX_PC6',
+                     '7': 'NTC_ADC', '8': 'NTC_DRV', '2': 'LED_K', '1': 'AUX_A1', '9': 'AUX_PC7',
                      '11': None, '12': 'NRST'},
               'R1': {'1': 'NTC_DRV', '2': 'NTC_ADC'}, 'D1': {'1': 'LED_K'},
-              'TP1': {'1': 'SCL_UP'}, 'TP4': {'1': 'NRST'}, 'TP5': {'1': 'AUX_A1'}, 'TP6': {'1': 'AUX_PC6'}},
+              'TP1': {'1': 'SCL_UP'}, 'TP4': {'1': 'NRST'}, 'TP5': {'1': 'AUX_A1'}, 'TP6': {'1': 'AUX_PC7'}},
         notes=[
             'U1 pin use: PD0/PD1 = hardware I2C (remap 1) to the upstream connector J1.',
             'PD1 is also SWIO, so the board is programmed through J1 pin 4 (SCL).',
             'PC0 and PC3 = bit-banged I2C controller to J2, used only in relay mode.',
-            'PC4 = ADC channel 2 on the thermistor divider, powered from PC7 while sampling.',
-            'PA2 = identify LED (active low).  PA1 (ADC channel 1) and PC6 = spare pins on pads.',
+            'PC4 = ADC channel 2 on the thermistor divider, powered from PC6 while sampling.',
+            'PA2 = identify LED (active low).  PA1 (ADC channel 1) and PC7 = spare pins on pads.',
         ],
     ),
 }
