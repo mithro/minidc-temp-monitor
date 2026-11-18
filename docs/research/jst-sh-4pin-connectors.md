@@ -8,13 +8,13 @@ Nov 17, 2026 · Tim 'mithro' Ansell
 
 **The sensor strip boards use the Megastar ZX-SH1.0-4PWT, LCSC [C7430446](https://www.lcsc.com/product-detail/wire-to-board-connector_megastar-zx-sh1-0-4pwt_C7430446.html)**, for J1 and J2 (side entry, SMD). It is an SH-series clone at $0.058 at 100 with 187k in stock on JLC, and NextPCB stocks it too. It sits on the stock KiCad footprint for the genuine JST part; see [Land pattern of the fitted part](#land-pattern-of-the-fitted-part).
 
-**Drop-in genuine part: JST SM04B-SRSS-TB(LF)(SN), LCSC [C160404](https://www.lcsc.com/product-detail/wire-to-board-connector_jst-sm04b-srss-tb-lf-sn_C160404.html)**. It is the part SparkFun lists for its Qwiic connector and the one the footprint was drawn for. It costs $0.17 at 100, which is about $0.23 more per two-connector board, with 67k in stock on JLC and 56k on NextPCB. It needs no board change, only a different LCSC number in `hardware/scripts/gen_sch.py`.
+**Drop-in genuine part: JST SM04B-SRSS-TB(LF)(SN), LCSC [C160404](https://www.lcsc.com/product-detail/wire-to-board-connector_jst-sm04b-srss-tb-lf-sn_C160404.html)**. It is the part SparkFun lists for its Qwiic connector and the one the footprint was drawn for. It costs $0.17 at 100, which is about $0.23 more per two-connector board, with 67k in stock on JLC and 56k on NextPCB. It needs no board change: change the LCSC number in `hardware/scripts/gen_sch.py` and the price entry in `hardware/scripts/cost.py`, then rebuild.
 
 Facts that hold for any choice:
 
 - **No 4-pin 1.0 mm SH connector on JLC is Basic or Preferred.** Of about 100 candidates none is Basic or flagged Preferred, and a Basic-only query for "SH1.0" returns nothing. So the connector costs one Extended-part loading fee per order whichever part is fitted.
 - **Side entry (right angle) is the Qwiic and STEMMA QT norm.** The cable runs flat along the board, which suits boards fixed to rack faces. Top entry (vertical) parts are listed below for boards where an edge is not reachable.
-- **Ready-made cables are cheaper from SparkFun, Adafruit or generic Qwiic cable sellers** than from JLC/LCSC, which has only a few hundred SH 4-pin leads in stock. See [Cables and housings](#cables-and-housings).
+- **Buy ready-made cables from SparkFun, Adafruit or generic Qwiic cable sellers.** JLC/LCSC has only a few hundred SH 4-pin leads in stock, of unclear type. See [Cables and housings](#cables-and-housings).
 
 ## Land pattern of the fitted part
 
@@ -25,26 +25,27 @@ The boards place C7430446 on [`Connector_JST:JST_SH_SM04B-SRSS-TB_1x04-1MP_P1.00
 | Signal pads | 0.6 × 1.55 mm at 1.0 mm pitch | 0.5 × 1.7 mm at 1.0 mm pitch |
 | Mounting pads | 1.2 × 1.8 mm | 1.2 × 2.5 mm |
 | Mounting pad centre, measured from the end pin centre | 1.3 mm | 1.1 mm |
+| Gap between signal pads and mounting pads | 2.2 mm | 1.3 mm |
 | Depth over all pads | 5.55 mm | 5.5 mm |
-| Body width × depth × height | 6.0 × 4.3 × 2.9 mm (JST part) | 6.35 × 4.3 × 3.15 mm |
+| Body width × depth × height | 6.0 × 4.3 × 2.9 mm (JST part, from the JLC listing) | 6.35 × 4.3 × 3.15 mm |
 
 - The signal pads agree to within 0.1 mm in width and 0.15 mm in length.
 - Megastar's mounting tabs sit 1.10 ± 0.15 mm outside the end pin centres. The footprint's mounting pads cover 0.7 to 1.9 mm, so the tabs land on the pads, about 0.2 mm inboard of the pad centres.
-- Megastar draws a longer mounting pad (2.5 mm against 1.8 mm). The footprint's pad covers the outer part of it.
-- The body is 0.35 mm wider and 0.25 mm taller than the JST part. The board has room for both.
+- Megastar draws a longer mounting pad (2.5 mm against 1.8 mm) that reaches 0.7 mm closer to the signal pins. The footprint's pad covers the 1.8 mm furthest from the pins. Scaled from the drawing, which gives no dimension for it, the tab is about 1.45 mm long and about 0.2 mm of its pin-side end overhangs the footprint's pad, leaving roughly 85 % of it on copper.
+- The body is 0.35 mm wider and about 0.25 mm taller than the JST part. The board has room for both.
 
 This is a comparison of drawings. No physical part has been soldered to the footprint or mated with a Qwiic cable yet.
 
 ## Side entry (right angle), SMD: SM04B-SRSS-TB and clones
 
-These are all sold as fitting the SM04B land pattern: four 0.6 × 1.55 mm signal pads at 1.0 mm pitch plus two 1.2 × 1.8 mm mounting pads. Only the Megastar part has been checked against it. "WT" or "WB" in a Chinese part number means horizontal ("卧贴"), "LT" or "LB" means vertical ("立贴").
+These are all sold as SM04B compatible. The SM04B land pattern in KiCad is four 0.6 × 1.55 mm signal pads at 1.0 mm pitch plus two 1.2 × 1.8 mm mounting pads. Only the Megastar part's drawing has been compared with it. "WT" or "WB" in a Chinese part number means horizontal ("卧贴"), "LT" or "LB" means vertical ("立贴").
 
 All rows are JLC **Extended**, none Preferred. "$ @10" is the price for a quantity of 10; "$ @100" uses the price break at or below 100. "NextPCB" is HQ Online stock and its price at or below 100, where the part is listed. Each LCSC number links to its LCSC page, "JLC" links to the JLC assembly part page, and each NextPCB figure links to the HQ Online item page.
 
 | Part | LCSC # and JLC page | Maker | Height | $ @10 | $ @100 | JLC stock | NextPCB stock ($) | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | SM04B-SRSS-TB(LF)(SN) | [C160404](https://www.lcsc.com/product-detail/wire-to-board-connector_jst-sm04b-srss-tb-lf-sn_C160404.html) · [JLC](https://jlcpcb.com/partdetail/JST-SM04B_SRSS_TB_LF_SN/C160404) | JST (genuine) | 2.9 mm | 0.215 | 0.174 | 67,087 | [56,425 (0.161 @50)](https://www.hqonline.com/product-detail/wire-to-board-connectors-jst-sm04b-srss-tb-lf--sn--2500326197) | Drop-in genuine part. [SparkFun PRT-14417](https://www.sparkfun.com/products/14417) part |
-| ZX-SH1.0-4PWT | [C7430446](https://www.lcsc.com/product-detail/wire-to-board-connector_megastar-zx-sh1-0-4pwt_C7430446.html) · [JLC](https://jlcpcb.com/partdetail/Megastar-ZX_SH1_04PWT/C7430446) | Megastar | 3.15 mm | 0.068 | 0.058 | 187,104 | [1,677 (0.051 @50)](https://www.hqonline.com/product-detail/wire-to-board-connectors-megastar-zx-sh1-0-4pwt-2500437126) | **Fitted on the sensor strip boards** (J1, J2). Biggest SH-named stock |
+| ZX-SH1.0-4PWT | [C7430446](https://www.lcsc.com/product-detail/wire-to-board-connector_megastar-zx-sh1-0-4pwt_C7430446.html) · [JLC](https://jlcpcb.com/partdetail/Megastar-ZX_SH1_04PWT/C7430446) | Megastar | 3.15 mm | 0.068 | 0.058 | 187,104 | [1,677 (0.051 @50)](https://www.hqonline.com/product-detail/wire-to-board-connectors-megastar-zx-sh1-0-4pwt-2500437126) | **Fitted on the sensor strip boards** (J1, J2) |
 | 1.0-4PWB | [C2905006](https://www.lcsc.com/product-detail/wire-to-board-connector_dealon-1-0-4pwb_C2905006.html) · [JLC](https://jlcpcb.com/partdetail/DEALON-1_04PWB/C2905006) | DEALON | 2.9 mm | 0.041 | 0.033 | 229,272 | not listed | Cheapest high-stock part, JLC lists it as SH series |
 | HC-1.0-4PWT | [C2845363](https://www.lcsc.com/product-detail/wire-to-board-connector_hctl-hc-1-0-4pwt_C2845363.html) · [JLC](https://jlcpcb.com/partdetail/HCTL-HC_1_04PWT/C2845363) | HCTL | 3.2 mm | 0.094 | 0.074 | 88,137 | [8,033 (0.060 @50)](https://www.hqonline.com/product-detail/wire-to-board-connectors-hctl-hc-1-0-4pwt-2500353843) | Common clone, stocked by both |
 | WAFER-SH1.0-4PWB | [C3029343](https://www.lcsc.com/product-detail/wire-to-board-connector_xunpu-wafer-sh1-0-4pwb_C3029343.html) · [JLC](https://jlcpcb.com/partdetail/XUNPU-WAFER_SH1_04PWB/C3029343) | XUNPU | 3.15 mm | 0.105 | 0.084 | 33,158 | [6,400 (0.074 @50)](https://www.hqonline.com/product-detail/wire-to-board-connectors-xunpu-wafer-sh1-0-4pwb-2500435391) | Stocked by both |
@@ -56,7 +57,7 @@ All rows are JLC **Extended**, none Preferred. "$ @10" is the price for a quanti
 | XY-SM04B-SRSS-TB | [C51940130](https://www.lcsc.com/product-detail/C51940130.html) · [JLC](https://jlcpcb.com/partdetail/XYECONN-XY_SM04B_SRSSTB/C51940130) | XYECONN | 2.9 mm | 0.039 | 0.039 | 19,242 | not listed | Named as an SM04B copy |
 | HC-SH1.0-4PWT | [C53454622](https://www.lcsc.com/product-detail/C53454622.html) · [JLC](https://jlcpcb.com/partdetail/HongCheng-HC_SH1_04PWT/C53454622) | Hong Cheng | 3.1 mm | 0.038 | 0.038 | 12,241 | not listed |  |
 | 1.0-4PWT | [C2763614](https://www.lcsc.com/product-detail/wire-to-board-connector_fg-1-0-4pwt_C2763614.html) · [JLC](https://jlcpcb.com/partdetail/FG-1_04PWT/C2763614) | FG | 3.05 mm | 0.058 | 0.046 | 9,412 | not listed |  |
-| XY-SH1.0-4A61 | [C19271998](https://www.lcsc.com/product-detail/wire-to-board-connector_xyeconn-xy-sh1-0-4a61_C19271998.html) · [JLC](https://jlcpcb.com/partdetail/XYECONN-XY_SH1_04A61/C19271998) | XYECONN | 2.9 mm | 0.036 | 0.036 | 7,487 | not listed | Cheapest per unit in bulk |
+| XY-SH1.0-4A61 | [C19271998](https://www.lcsc.com/product-detail/wire-to-board-connector_xyeconn-xy-sh1-0-4a61_C19271998.html) · [JLC](https://jlcpcb.com/partdetail/XYECONN-XY_SH1_04A61/C19271998) | XYECONN | 2.9 mm | 0.036 | 0.036 | 7,487 | not listed | $0.017 at 20,000, the lowest bulk price |
 | 1.0T-4P | [C145956](https://www.lcsc.com/product-detail/wire-to-board-connector_boomele-boom-precision-elec-1-0t-4p_C145956.html) · [JLC](https://jlcpcb.com/partdetail/C145956) | BOOMELE | n/l | 0.061 | 0.061 | 1,259 | [56,707 (0.046 @100)](https://www.hqonline.com/product-detail/wire-to-board-connectors-boomele-1-0t-4pwotiebiandai-1012262449) | Low JLC stock but NextPCB's largest clone stock |
 | WAFER-SH1.0-4PWB | n/a | CAX | n/l | n/a | n/a | n/a | [2,049 (0.030 @100)](https://www.hqonline.com/product-detail/wire-to-board-connectors-cax-wafer-sh1-0-4pwb-2500419395) | NextPCB only |
 | SM04B-SRSS-G-TB(LF)(SN) | [C595145](https://www.lcsc.com/product-detail/wire-to-board-connector_jst-sm04b-srss-g-tb-lf-sn_C595145.html) · [JLC](https://jlcpcb.com/partdetail/JST-SM04B_SRSS_G_TB_LF_SN/C595145) | JST (gold) | 2.9 mm | 0.337 | 0.337 | 0 | not listed | Gold-plated genuine, out of stock |
@@ -97,13 +98,13 @@ The search terms "1.0 mm 4P" also return these. Don't use them for Qwiic:
   - [`Connector_JST:JST_SH_SM04B-SRSS-TB_1x04-1MP_P1.00mm_Horizontal`](https://gitlab.com/kicad/libraries/kicad-footprints/-/blob/master/Connector_JST.pretty/JST_SH_SM04B-SRSS-TB_1x04-1MP_P1.00mm_Horizontal.kicad_mod)
   - [`Connector_JST:JST_SH_BM04B-SRSS-TB_1x04-1MP_P1.00mm_Vertical`](https://gitlab.com/kicad/libraries/kicad-footprints/-/blob/master/Connector_JST.pretty/JST_SH_BM04B-SRSS-TB_1x04-1MP_P1.00mm_Vertical.kicad_mod)
 
-  The sensor strip boards use the horizontal footprint. The SH clones are sold as fitting the same land patterns, but check each clone's drawing before using it, as done for the fitted part [above](#land-pattern-of-the-fitted-part).
+  The sensor strip boards use the horizontal footprint. Check a clone's drawing against the footprint before using it; [Land pattern of the fitted part](#land-pattern-of-the-fitted-part) does this for C7430446.
 
 Pin order on the boards is the Qwiic order: pin 1 GND, 2 VDD, 3 SDA, 4 SCL (black, red, blue, yellow on standard cables). VDD is 3.3 V on Qwiic and 3 to 5 V on STEMMA QT; the sensor strip boards accept 3.3 V or 5 V (see [hardware/](../../hardware/README.md)).
 
 ## Cables and housings
 
-Ready-made cables are the cheap option. JLC/LCSC has only a few hundred pre-crimped SH 4-pin leads in stock, at about $0.08 to $0.11 each (for example BEIXUNZE SH1.00--4P-100-30A [C54308409](https://jlcpcb.com/partdetail/BEIXUNZE-SH1_00_4P_10030A/C54308409), 195 in stock, and BXCONN SH4P-28AWG-200-A1T [C53413421](https://www.lcsc.com/product-detail/C53413421.html), 200 in stock). These are single-ended or unclear, so check before buying.
+Ready-made cables are the practical option. JLC/LCSC has only a few hundred pre-crimped SH 4-pin leads in stock, at about $0.08 to $0.11 each (for example BEIXUNZE SH1.00--4P-100-30A [C54308409](https://jlcpcb.com/partdetail/BEIXUNZE-SH1_00_4P_10030A/C54308409), 195 in stock, and BXCONN SH4P-28AWG-200-A1T [C53413421](https://www.lcsc.com/product-detail/C53413421.html), 200 in stock). These are single-ended or unclear, so check before buying.
 
 | Item | Source | Price |
 | --- | --- | --- |
@@ -132,15 +133,15 @@ The contacts are small and need a fine crimp tool (the JST tool is expensive, an
 
 NextPCB's parts store is [HQ Online](https://www.hqonline.com/), and the NextPCB columns above come from its search API.
 
-- It stocks the genuine JST parts (SM04B 56k, BM04B 3.5k, SHR-04V-S 48k) at prices 5 to 10 % under JLC's.
-- Its clone range is narrower: BOOMELE 1.0T-4P (57k), HCTL, XUNPU, Megastar, hanxia and CAX. The CAX and hanxia side-entry parts are the cheapest anywhere at about $0.025 to $0.03 at 100, with only 2,000 in stock.
+- It stocks the genuine JST parts (SM04B 56k, BM04B 3.5k, SHR-04V-S 48k). The two connectors are about 8 % under JLC's price and the housing is about 5 % over.
+- Its clone range is narrower: BOOMELE 1.0T-4P (57k), HCTL, XUNPU, Megastar, hanxia and CAX. The CAX and hanxia side-entry parts are the cheapest anywhere at about $0.025 to $0.03 at 100, with about 2,000 of each in stock.
 - It doesn't expose a Basic or Extended class, and its assembly loading-fee rules are not published on the site, so the per-order fees cannot be compared with JLC's.
 - The search wants the full part number with suffix (for example `SM04B-SRSS-TB(LF)(SN)`). A bare `SM04B-SRSS-TB` returns nothing.
 
 ## Method and caveats
 
-- Every item link was opened on 2026-11-17 and checked to show the named part. BEIXUNZE C54308409 has no LCSC page, so it links to JLC only. The CAX WAFER-SH1.0-4PWB is not on JLC or LCSC.
+- BEIXUNZE C54308409 has no LCSC page, so it links to JLC only. The CAX WAFER-SH1.0-4PWB is not on JLC or LCSC.
 - JLC data is from JLC's component search API with the terms SH1.0, SM04B, BM04B, 1.0-4P, "1x4P 1mm", "1.0mm 4P", JST SH and SHR-04V-S, filtered on the listed pitch of 1 mm and 4 pins, dropping "JLCPCB Assembly" placeholder rows, which have no stock. In the same data, Basic parts such as crystals show up as Basic, so the "no Basic SH connector" result is not a filter error.
 - "SH compatible" is based on the part name and JLC's "Reference Series: SH" field, not on mating tests. For clones, check the datasheet drawing against JST's [SH datasheet](https://www.jst-mfg.com/product/pdf/eng/eSH.pdf) and try one with a real Qwiic cable.
-- JLC charges a loading fee per unique Extended part per order; [hardware/COST.md](../../hardware/COST.md) has the fee used in the cost estimate. Both board versions use the same connector part, so a combined order pays it once.
+- JLC charges a loading fee per unique Extended part per order; [hardware/COST.md](../../hardware/COST.md) has the fee used in the cost estimate. That estimate counts the fee once for each board version.
 - The SparkFun prices are shown on its site as two figures, a sale and a list price, and are given as "about".
