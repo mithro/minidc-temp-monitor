@@ -146,10 +146,9 @@ updated one board at a time. It waits for BOOT with no time limit, so a hub
 that stops part-way through an update has to come back and finish or send
 BOOT (`minidc.py boot`).
 
-During the window the bootloader turns on the internal pull-up (about 45 k to
-VDD) on upstream SDA, so an unconnected input reads high. On a 5 V chain
-behind a 3.3 V hub that adds a few tens of microamps into the hub's pull-up
-for that time.
+The upstream pins never get an internal pull-up, so a chain powered up with
+nothing connected to J1 of board 0 has a floating SDA there and may stop in
+its bootloaders. `minidc.py boot` starts it once a hub is attached.
 
 **Updating a board** (what `minidc.py update` does):
 

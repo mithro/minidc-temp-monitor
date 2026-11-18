@@ -99,7 +99,9 @@ void __attribute__((noreturn, used)) boot_main(void)
 	if (!stay) {
 		uint32_t high_at = 0;
 
-		PIN_RELEASE(UP_PORT, UP_SDA_PIN);
+		/* Plain input: the only pull-ups on the upstream hop are the ones on
+		 * the board or hub before us. */
+		PIN_CFG(UP_PORT, UP_SDA_PIN, PIN_FLOAT);
 		for (;;) {
 			uint32_t t = SysTick->CNT;
 
