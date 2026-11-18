@@ -49,7 +49,7 @@ including estimated fabrication and assembly fees.
 | R1 | 100k 1% 0402, divider | C25741 | yes |
 | R2 | 1k 0402, LED | C11702 | yes |
 | R3, R4 | 0R 0402, shared-bus links | C17168 | no |
-| R5, R6 | 4k7 0402, downstream pull-ups | C25900 | yes |
+| R5, R6 | 4k7 0402, downstream pull-ups | C25900 | yes, optional |
 | C1, C3 | 100n 16 V X7R 0402 | C1525 | yes |
 | C2 | 1u 25 V X5R 0402 | C52923 | yes |
 | D1 | Red LED 0603 | C2286 | yes |
@@ -95,7 +95,7 @@ straight through to the next board, so one chain runs at one voltage.
   to 3.3 V, because both microcontrollers read 3.3 V as high at VDD = 5 V
   (input high threshold about 2.1 V on the CH32V003 and 2.2 V on the
   CH32V005). That relies on the boards never driving SDA or SCL high, so
-  firmware must keep the I2C pins open-drain. Do not pull the bus up to 5 V on
+  firmware must only ever pull the upstream I2C pins low or release them. Do not pull the bus up to 5 V on
   a 3.3 V chain.
 - No signal may go above VDD. The CH32V005 has no 5 V tolerant pins, and on the
   CH32V003 only the upstream I2C pins are. Set the debug probe to the chain
@@ -108,8 +108,14 @@ straight through to the next board, so one chain runs at one voltage.
 
 | Mode | R3, R4 (0R) | R5, R6 (4k7) | Behaviour |
 |---|---|---|---|
-| Relay (default) | not fitted | fitted | Each board is an I2C target upstream and a bit-banged controller downstream, and forwards traffic. Every hop is a fresh, short bus. |
+| Relay (default) | not fitted | fitted (optional) | Each board is an I2C target upstream and a bit-banged controller downstream, and forwards traffic. Every hop is a fresh, short bus. |
 | Shared bus | fitted | not fitted | SDA/SCL pass straight through. All boards share one bus. |
+
+R5 and R6 are optional. The microcontrollers have internal pull-ups of 35 to
+55 k, which carry a short hop at roughly 10 to 20 kHz, so a relay board also
+works with R5 and R6 left off. With them fitted a hop runs at 100 kHz and holds
+the bus better against noise. They are in the BOM and placement files; delete
+their rows from both to build without them.
 
 The BOM and placement files are for the relay fitting. R5 and R6 are the pull-ups
 of the hop to the next board; the hop from the hub to the first board uses the
@@ -148,6 +154,13 @@ Needs KiCad 9 (`kicad-cli` and the `pcbnew` Python module) and numpy.
   high before sampling, so C3 has settled.
 - CH32V003: the LED sits on the SWIO pin. Light it by driving PD4 or PD5 low and
   leave PD1 as SWIO. Pin 1 is PD6 and PA1 bonded together, so keep PD6 an input.
+- R5 and R6 are optional, so in relay mode firmware must work the downstream
+  SDA and SCL pins without them: release a line by making the pin an input with
+  its pull-up on, and drive it by making the pin an output held low. The
+  internal pull-up only exists in input mode. Pick the downstream bit rate to
+  suit: 10 to 20 kHz on internal pull-ups alone, up to 100 kHz with R5 and R6.
+  Keep the pull-ups off on the upstream pins, and on every bus pin in
+  shared-bus mode, so the only pull-ups there are the ones on the hub.
 - CH32V003: the ADC and flash writes want VDD of 2.8 V or more, and ADC accuracy
   is only specified above 2.9 V. Watch the drop on long chains, mainly at 3.3 V.
 - The allowed ADC speed depends on VDD. Keep the CH32V003 ADC clock at 6 MHz or
@@ -159,9 +172,8 @@ Needs KiCad 9 (`kicad-cli` and the `pcbnew` Python module) and numpy.
 - No firmware yet. The default fitting depends on relay firmware. Self-addressing,
   the relay mode and the CH32V005 programming window on the shared SCL/SWIO pin
   are untested ideas until there is some.
-- R5 and R6 may be unnecessary. Both microcontrollers have internal pull-ups of
-  35 to 55 k, enough for roughly 10 to 20 kHz on a short hop. Test a few boards
-  with R5 and R6 removed before leaving them off a later build.
+- Running without R5 and R6 is untested. Try a few boards with them removed
+  before leaving them off a whole build.
 - The routing is machine-made and passes DRC, but has not been tidied by hand.
 - No reference designators on the silkscreen.
 - The placement file rotations have not been checked against JLCPCB's part
