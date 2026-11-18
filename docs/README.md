@@ -3,7 +3,8 @@
 The design itself is documented next to the files, in
 [hardware/](../hardware/README.md), with the cost estimate in
 [hardware/COST.md](../hardware/COST.md) and the cable order list in
-[hardware/CABLES.md](../hardware/CABLES.md).
+[hardware/CABLES.md](../hardware/CABLES.md), and in
+[firmware/](../firmware/README.md).
 
 ## Research
 
