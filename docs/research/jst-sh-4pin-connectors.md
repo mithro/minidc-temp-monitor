@@ -14,7 +14,7 @@ Facts that hold for any choice:
 
 - **No 4-pin 1.0 mm SH connector on JLC is Basic or Preferred.** Of about 100 candidates none is Basic or flagged Preferred, and a Basic-only query for "SH1.0" returns nothing. So the connector costs one Extended-part loading fee per order whichever part is fitted.
 - **Side entry (right angle) is the Qwiic and STEMMA QT norm.** The cable runs flat along the board, which suits boards fixed to rack faces. Top entry (vertical) parts are listed below for boards where an edge is not reachable.
-- **Cables are generic double-ended SH 4-pin leads at about $0.10 each**, as [hardware/](../../hardware/README.md#cables) specifies. JLC/LCSC has only a few hundred in stock, so a full build needs AliExpress-type sellers too. SparkFun and Adafruit cables cost about ten times as much and are known to be wired straight. See [Cables and housings](#cables-and-housings).
+- **Cables are generic double-ended SH 4-pin leads at about $0.10 each from AliExpress-type sellers.** JLC/LCSC stocks only single-ended leads. The order list is in [hardware/CABLES.md](../../hardware/CABLES.md). SparkFun and Adafruit cables cost about ten times as much and are known to be wired straight. See [Cables and housings](#cables-and-housings).
 
 ## Land pattern of the fitted part
 
@@ -104,7 +104,7 @@ Pin order on the boards is the Qwiic order: pin 1 GND, 2 VDD, 3 SDA, 4 SCL (blac
 
 ## Cables and housings
 
-The boards are joined with generic double-ended leads. JLC/LCSC has only a few hundred pre-crimped SH 4-pin leads in stock, at about $0.08 to $0.11 each (for example BEIXUNZE SH1.00--4P-100-30A [C54308409](https://jlcpcb.com/partdetail/BEIXUNZE-SH1_00_4P_10030A/C54308409), 195 in stock, and BXCONN SH4P-28AWG-200-A1T [C53413421](https://www.lcsc.com/product-detail/C53413421.html), 200 in stock). The listings do not say whether they are double-ended or how they are wired, so check a sample.
+The boards are joined with generic double-ended leads from AliExpress-type sellers; [hardware/CABLES.md](../../hardware/CABLES.md) has the order list. JLC/LCSC has no double-ended SH 4-pin lead. Its SH 4-pin leads are single-ended, with one housing and tinned wire ends (for example BXCONN SH4P-28AWG-200-A1T [C53413421](https://www.lcsc.com/product-detail/C53413421.html), 200 mm, $0.11, 200 in stock), which suit the hub end of a chain.
 
 Branded Qwiic and STEMMA QT cables are wired straight through and make a known-good reference:
 
@@ -116,7 +116,7 @@ Branded Qwiic and STEMMA QT cables are wired straight through and make a known-g
 | 300 mm | [Adafruit 5384](https://www.adafruit.com/product/5384) | $1.25 |
 | 500 mm | [SparkFun flexible PRT-14429](https://www.sparkfun.com/products/14429) | about $2.75 |
 
-Generic "JST SH 1.0 4-pin" double-ended leads from AliExpress-type sellers come wired straight or reversed. Pin 1 at one end must reach pin 1 at the other.
+Generic "JST SH 1.0 4-pin" double-ended leads from AliExpress-type sellers come wired straight or reversed. Pin 1 at one end must reach pin 1 at the other; [hardware/CABLES.md](../../hardware/CABLES.md#wiring-direction) shows how to tell them apart.
 
 For making cables to length:
 
