@@ -3,7 +3,7 @@
 
 Part prices are a snapshot of the JLCPCB parts catalogue (price breaks per
 LCSC number), taken on the date below. Fees are estimates, not a quote.
-Run from hardware/:  python3 scripts/cost.py [boards]
+Usage: cost.py [boards]   (default 200; rewrites COST.md for that quantity)
 """
 import csv
 import sys
@@ -41,7 +41,9 @@ def unit_price(lcsc, qty):
 
 def joints(refs, comment):
     key = refs[0].rstrip('0123456789')
-    return len(refs) * JOINTS.get(key, JOINTS.get(f'{key}:{comment}', 2))
+    if key == 'U':                      # no default: an IC must be listed
+        return len(refs) * JOINTS[f'U:{comment}']
+    return len(refs) * JOINTS.get(key, 2)
 
 
 def board(name, boards):
@@ -76,21 +78,21 @@ def main():
            'order quantity, in USD. The fee lines are estimates of JLCPCB standard charges,',
            'not a quote: get a real quote before ordering. Shipping, tax, cables and spare',
            'parts for placement losses are not included.', '']
-    summary = []
+    summary, detail = [], []
     for name in ('sensor-ch32v003', 'sensor-ch32v005'):
         rows, parts, fees = board(name, boards)
         total = sum(v for _, v in fees)
-        summary.append(f'| `{name}` | {parts:.3f} | {parts * boards:.2f} | {total - parts * boards:.2f} '
+        summary.append(f'| `{name}` | {parts:.4f} | {parts * boards:.2f} | {total - parts * boards:.2f} '
                        f'| {total:.2f} | {total / boards:.2f} |')
-        out += [f'## {name}', '',
+        detail += [f'## {name}', '',
                 '| Ref | Part | LCSC | JLC library | Qty | Unit price | Cost per board |',
                 '|---|---|---|---|---|---|---|', *rows,
                 f'| | **Parts per board** | | | | | **{parts:.4f}** |', '',
                 f'| For {boards} boards | USD |', '|---|---|',
                 *[f'| {k} | {v:.2f} |' for k, v in fees],
                 f'| **Total** | **{total:.2f}** |', '']
-    out[9:9] = ['| Board | Parts per board | Parts | Fees (estimated) | Total | Per board |',
-                '|---|---|---|---|---|---|', *summary, '']
+    out += ['| Board | Parts per board | Parts | Fees (estimated) | Total | Per board |',
+            '|---|---|---|---|---|---|', *summary, '', *detail]
     (HERE / 'COST.md').write_text('\n'.join(out))
     print('\n'.join(out))
 

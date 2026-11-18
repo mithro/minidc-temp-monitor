@@ -2,6 +2,7 @@
 # Regenerate both sensor boards from the scripts and export the review and
 # ordering files.  Needs KiCad 9 (kicad-cli and the pcbnew Python module).
 #   ./build.sh           regenerate schematics, boards and exports
+# Both forms finish by rewriting COST.md with scripts/cost.py.
 #   ./build.sh export    only redo the exports from the files as they are
 set -e
 cd "$(dirname "$0")"

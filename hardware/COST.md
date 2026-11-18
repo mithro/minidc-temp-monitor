@@ -9,8 +9,8 @@ parts for placement losses are not included.
 
 | Board | Parts per board | Parts | Fees (estimated) | Total | Per board |
 |---|---|---|---|---|---|
-| `sensor-ch32v003` | 0.330 | 66.10 | 51.42 | 117.52 | 0.59 |
-| `sensor-ch32v005` | 0.301 | 60.20 | 53.12 | 113.32 | 0.57 |
+| `sensor-ch32v003` | 0.3305 | 66.10 | 51.42 | 117.52 | 0.59 |
+| `sensor-ch32v005` | 0.3010 | 60.20 | 53.12 | 113.32 | 0.57 |
 
 ## sensor-ch32v003
 

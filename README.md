@@ -22,8 +22,8 @@ per microcontroller. Both pass ERC and DRC. There is no firmware yet.
   target upstream, bit-banged controller downstream), so every cable is its
   own short bus. A shared pass-through bus is a build option.
 - **Supply:** 3.3 V or 5 V, passed straight through the chain.
-- **Cost:** about $0.30 to $0.33 of parts per board, and an estimated $115
-  to $120 for 200 assembled boards. See [hardware/COST.md](hardware/COST.md).
+- **Cost:** about $0.30 to $0.33 of parts per board, and an estimated $113
+  to $118 for 200 assembled boards. See [hardware/COST.md](hardware/COST.md).
 
 Not designed yet: the hub that powers and reads the chains, the link from
 the hub to the first board of each chain, humidity sensing, and the
@@ -33,6 +33,5 @@ Open questions: cable length per aisle and points per rack face.
 
 ## Documentation
 
-See [docs/](docs/README.md) for the earlier research (it predates the
-microcontroller sensor board) and [hardware/](hardware/README.md) for the
-boards.
+See [hardware/](hardware/README.md) for the boards and
+[docs/](docs/README.md) for the background research.

@@ -6,7 +6,7 @@ Nov 16, 2026 · Tim 'mithro' Ansell
 
 ## Summary
 
-The de facto standard for plug-and-play I2C sensors is a **4-pin JST SH 1.0 mm connector wired GND, V+, SDA, SCL**, shared by SparkFun Qwiic and Adafruit STEMMA QT. Building our sensor boards around that connector makes them compatible with hundreds of off-the-shelf boards, cables, hubs and extenders at no extra cost.
+The de facto standard for plug-and-play I2C sensors is a **4-pin JST SH 1.0 mm connector wired GND, V+, SDA, SCL**, shared by SparkFun Qwiic and Adafruit STEMMA QT. Using that connector and pin order gives access to cheap pre-made cables, and to hundreds of off-the-shelf boards, hubs and extenders wherever the voltage matches.
 
 - **Qwiic** is 3.3 V power and logic only, with pull-ups on every board. **STEMMA QT** uses the same plug but accepts 3-5 V, with a regulator and level shifter on each board.
 - The 2.0 mm systems use two different connector bodies. Grove, M5Stack and STEMMA 4-pin share one pin order (SCL, SDA, V+, GND), but DFRobot Gravity uses the same JST PH plug as STEMMA with its power and I2C pins reversed, which can damage boards if mixed.
@@ -38,7 +38,7 @@ The Grove and Qwiic pin orders are the same sequence counted from opposite ends,
 
 The 1.0 mm JST SH (genuine part SM04B-SRSS-TB, right-angle SMD) is the one worth putting on our boards. Most Qwiic and STEMMA QT boards place two of them so modules daisy-chain; SparkFun's [Qwiic page](https://www.sparkfun.com/qwiic) notes the plug is polarized and sells cables in 50, 100, 200 and 500 mm lengths.
 
-- **JST SH 1.0 mm (Qwiic, STEMMA QT, Modulino):** smallest footprint, cheap pre-made cables everywhere, but the latch is friction-only and the crimps are fine-pitch. Generic SH clones on LCSC are much cheaper than genuine JST; check stock and pricing when we pick the BOM.
+- **JST SH 1.0 mm (Qwiic, STEMMA QT, Modulino):** smallest footprint, cheap pre-made cables everywhere, but the latch is friction-only and the crimps are fine-pitch. Generic SH clones on LCSC are much cheaper than genuine JST; the sensor strip boards use one (LCSC C7430446).
 - **2.0 mm (Grove HY2.0, JST PH, Gravity):** sturdier and easier to hand-crimp, but Gravity and STEMMA 4-pin share the JST PH plug with opposite pin orders, so a cable from one can plug into the other and swap power.
 - **0.1" headers (Breakout Garden, mikroBUS, Pmod, UEXT):** suited to stacking on a host, not to cable runs between racks.
 - **RJ45 (QwiicBus, PCA9615 boards):** the long-distance option; uses standard Cat5/6 patch cables. See the long cable runs section below.
@@ -56,7 +56,7 @@ The sensor strip boards carry the supply straight through and work at 3.3 V or 5
 
 ## Long cable runs
 
-Plain I2C is limited by the 400 pF bus capacitance budget, so a Qwiic chain is practical to roughly 1 m total at 100 kHz. The ecosystems offer four ways past that, and differential PCA9615 over Ethernet cable is the one that fits an aisle.
+Plain I2C is limited by the 400 pF bus capacitance budget, so a Qwiic chain is practical to roughly 1 m total at 100 kHz. The ecosystems offer four ways past that, and differential PCA9615 over Ethernet cable is the one with the longest reach.
 
 | Option | Chip | How it works | Reach (vendor claim) | Ecosystem product |
 | --- | --- | --- | --- | --- |
@@ -65,7 +65,7 @@ Plain I2C is limited by the 400 pF bus capacitance budget, so a Qwiic chain is p
 | Bus buffer (current boost) | NXP P82B715 / P82B96 | Buffers the bus to drive heavy cable capacitance | Tens of metres, single-ended | Older SparkFun/third-party breakouts |
 | Isolator | TI ISO1540 | Galvanically isolates two segments | No extra reach; breaks ground loops | Adafruit ISO1540 (STEMMA QT) |
 
-QwiicBus details worth copying: RJ45 straight-through cable; 3.3 V default (5 V option) on the blue pair (pins 4/5); the green pair (pins 3/6) can carry 3.8-36 V, which the MidPoint's LMR33630 bucks to 3.3 V at up to 3 A. The controller must sit on an EndPoint; MidPoints have two RJ45 jacks and no termination.
+QwiicBus details: RJ45 straight-through cable; 3.3 V default (5 V option) on the blue pair (pins 4/5); the green pair (pins 3/6) can carry 3.8-36 V, which the MidPoint's LMR33630 bucks to 3.3 V at up to 3 A. The controller must sit on an EndPoint; MidPoints have two RJ45 jacks and no termination.
 
 ## Addresses and multiplexers
 
@@ -80,7 +80,7 @@ Every ecosystem solves address clashes the same two ways: solder jumpers or pads
 
 ## Temperature and humidity breakouts
 
-The same dozen chips recur across every ecosystem, and they overlap heavily with the parts in the [earlier LCSC sensor survey](i2c-temperature-sensors-lcsc.md). These line-ups are from vendor catalogues as I know them, not re-checked product by product today; confirm a specific board before buying.
+The same dozen chips recur across every ecosystem, and they overlap heavily with the parts in the [LCSC sensor survey](i2c-temperature-sensors-lcsc.md). These line-ups are from vendor catalogues as I know them, not re-checked product by product today; confirm a specific board before buying.
 
 | Ecosystem | Temperature only | Temperature + humidity | Non-contact / other |
 | --- | --- | --- | --- |
@@ -93,7 +93,7 @@ The same dozen chips recur across every ecosystem, and they overlap heavily with
 | MikroE Click | Thermo Click series (TMP102, LM75, MCP9808, TMP117 and others) | Temp&Hum Click series (SHT, HDC, HTS221) | IR Thermo Click |
 | Digilent Pmod | Pmod TMP2 (ADT7420), Pmod TMP3 (TCN75A) | Pmod HYGRO (HDC1080) | Pmod TC1 (thermocouple, SPI) |
 
-Two patterns matter for us. Bulk single-point temperature boards are rare in these catalogues; they favour precision parts (TMP117, MCP9808) or combo environmental sensors. The one many-per-bus board is Adafruit's PCT2075, from the 27-address LM75/TMP175 family.
+Bulk single-point temperature boards are rare in these catalogues; they favour precision parts (TMP117, MCP9808) or combo environmental sensors. The one many-per-bus board is Adafruit's PCT2075, from the 27-address LM75/TMP175 family.
 
 ## What the design uses from this
 
@@ -114,6 +114,6 @@ The long-run options above (differential I2C, bus buffers, muxes) remain the ref
 - [Cable-tester.com: DFRobot Gravity I2C pinout](https://www.cable-tester.com/i2c-pin-out-from-gravity-dfrobot/)
 - [SparkFun PCA9615 Differential I2C hookup guide](https://learn.sparkfun.com/tutorials/qwiic-differential-i2c-bus-extender-pca9615-hookup-guide/introduction-)
 - [SparkFun QwiicBus hookup guide](https://learn.sparkfun.com/tutorials/sparkfun-qwiicbus-hookup-guide/hardware-overview)
-- [Earlier survey: Cheap I2C temperature sensors on LCSC / JLCPCB](i2c-temperature-sensors-lcsc.md)
+- [Survey: Cheap I2C temperature sensors on LCSC / JLCPCB](i2c-temperature-sensors-lcsc.md)
 
 M5Stack Port A, mikroBUS, Pmod and UEXT pinouts, typical pull-up values, and the per-ecosystem sensor line-ups are from my own knowledge, not from pages opened today.

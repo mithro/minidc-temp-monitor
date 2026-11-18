@@ -39,7 +39,7 @@ There are two versions of the same board, differing only in the microcontroller:
 ## Parts and cost
 
 Both boards share every part except the microcontroller. Prices are JLCPCB
-catalogue prices for 200 boards; [COST.md](COST.md) has the full calculation,
+catalogue prices on 18 Nov 2026 for 200 boards; [COST.md](COST.md) has the full calculation,
 including estimated fabrication and assembly fees.
 
 | Ref | Part | LCSC | Fitted |
@@ -102,7 +102,7 @@ straight through to the next board, so one chain runs at one voltage.
 
 | Mode | R3, R4 (0R) | R5, R6 (4k7) | Behaviour |
 |---|---|---|---|
-| Relay (default) | not fitted | fitted | Each board is an I2C target upstream and a bit-banged controller downstream, and forwards traffic. Every hop is a fresh, short bus, so no separate redriver board is needed. |
+| Relay (default) | not fitted | fitted | Each board is an I2C target upstream and a bit-banged controller downstream, and forwards traffic. Every hop is a fresh, short bus. |
 | Shared bus | fitted | not fitted | SDA/SCL pass straight through. All boards share one bus. |
 
 The BOM and placement files are for the relay fitting. R5 and R6 are the pull-ups
@@ -120,12 +120,12 @@ than editing the KiCad files by hand (hand edits are lost on the next build).
 - `scripts/gen_sch.py` draws the schematic and checks it against its pin table.
   It also writes `lib/minidc.kicad_sym` (the MCU symbols, adjusted so pin text
   does not collide) and the `sym-lib-table` in each project directory.
-- `scripts/cost.py` prices both boards from their parts lists and writes
-  [COST.md](COST.md).
 - `scripts/gen_pcb.py` places the parts, routes the board and pours ground.
 - `scripts/route.py` is the small grid router `gen_pcb.py` uses.
-- `build.sh` runs both for both versions, then ERC, DRC, the exports and
-  `cost.py`.
+- `scripts/cost.py` prices both boards from their parts lists and writes
+  [COST.md](COST.md).
+- `build.sh` runs the schematic and board scripts for both versions, then
+  ERC, DRC, the exports and `cost.py`.
 - `sensor-*/out/` holds the schematic PDF, board renders, the BOM and placement
   files in JLCPCB column layout, and the ERC and DRC reports. Gerbers are written
   to `out/gerbers/` by the build and are not committed.
