@@ -19,17 +19,18 @@ NS = uuid.UUID('6f1c2f0e-3d0a-4c58-9a70-6d6a1d0c5b11')
 FP_R = 'Resistor_SMD:R_0402_1005Metric'
 FP_C = 'Capacitor_SMD:C_0402_1005Metric'
 FP_J = 'Connector_JST:JST_SH_SM04B-SRSS-TB_1x04-1MP_P1.00mm_Horizontal'
-FP_TP = 'TestPoint:TestPoint_Pad_D1.0mm'
+FP_R0603 = 'Resistor_SMD:R_0603_1608Metric'   # wide enough to bridge over one track
+FP_TP = 'TestPoint:TestPoint_Pad_D1.5mm'
 
 
 # ref: (library, symbol, value, footprint, LCSC part, do-not-populate)
 COMMON_PARTS = {
     'J1': ('Connector_Generic_MountingPin', 'Conn_01x04_MountingPin', 'Qwiic UP', FP_J, 'C7430446', False),
     'J2': ('Connector_Generic_MountingPin', 'Conn_01x04_MountingPin', 'Qwiic DOWN', FP_J, 'C7430446', False),
-    'R3': ('Device', 'R', '0R', FP_R, 'C17168', True),
-    'R4': ('Device', 'R', '0R', FP_R, 'C17168', True),
-    'R5': ('Device', 'R', '4k7', FP_R, 'C25900', False),
-    'R6': ('Device', 'R', '4k7', FP_R, 'C25900', False),
+    'R3': ('Device', 'R', '0R', FP_R0603, 'C21189', True),
+    'R4': ('Device', 'R', '0R', FP_R0603, 'C21189', True),
+    'R5': ('Device', 'R', '4k7', FP_R0603, 'C23162', False),
+    'R6': ('Device', 'R', '4k7', FP_R0603, 'C23162', False),
     'R1': ('Device', 'R', '100k 1%', FP_R, 'C25741', False),
     'RT1': ('Device', 'Thermistor_NTC', '100k B3950 1%', FP_R, 'C6807762', False),
     'C3': ('Device', 'C', '100n', FP_C, 'C1525', False),
@@ -57,14 +58,14 @@ VARIANTS = {
         title='Temp sensor strip, CH32V003J4M6',
         parts={'U1': ('MCU_WCH_RiscV', 'CH32V003JxMx', 'CH32V003J4M6', 'Package_SO:SOIC-8_3.9x4.9mm_P1.27mm', 'C5346354', False),
                'TP1': ('Connector', 'TestPoint', 'SWIO', FP_TP, '', False)},
-        pins={'U1': {'5': 'SDA_UP', '6': 'SCL_UP', '7': 'SCL_DN', '4': 'VDD', '2': 'GND',
-                     '8': 'SWIO', '1': 'SDA_DN', '3': 'NTC_ADC'},
+        pins={'U1': {'5': 'SDA_UP', '6': 'SCL_UP', '7': 'SDA_DN', '4': 'VDD', '2': 'GND',
+                     '8': 'SWIO', '1': 'NTC_ADC', '3': 'SCL_DN'},
               'R1': {'1': 'VDD', '2': 'NTC_ADC'}, 'D1': {'1': 'SWIO'}, 'TP1': {'1': 'SWIO'}},
         notes=[
             'U1 pin use: PC1/PC2 = hardware I2C to the upstream connector J1.',
-            'PA1 and PC4 = bit-banged I2C controller to J2, used only in relay mode.',
-            'PA2 = ADC channel 0 on the thermistor divider.  PD1 = SWIO programming pin,',
-            'shared with the identify LED (drive PD4 or PD5 low to light it).',
+            'PC4 (SDA) and PA2 (SCL) = bit-banged I2C controller to J2, used only in relay mode.',
+            'PA1 = ADC channel 1 on the thermistor divider; PD6 shares the pin and stays an input.',
+            'PD1 = SWIO programming pin, shared with the identify LED (drive PD4 or PD5 low to light it).',
         ],
     ),
     'ch32v005': dict(
@@ -304,7 +305,7 @@ class Sheet:
         v = VARIANTS[self.variant]
         sch = [Sym('kicad_sch'), [Sym('version'), 20250114], [Sym('generator'), 'eeschema'],
                [Sym('generator_version'), '9.0'], [Sym('uuid'), self.root], [Sym('paper'), 'A4'],
-               [Sym('title_block'), [Sym('title'), v['title']], [Sym('date'), '2026-11-18'], [Sym('rev'), '0.1'],
+               [Sym('title_block'), [Sym('title'), v['title']], [Sym('date'), '2026-11-18'], [Sym('rev'), '0.2'],
                 [Sym('company'), 'minidc-temp-monitor']],
                [Sym('lib_symbols')] + list(self.libsyms.values())] + self.items + [
                [Sym('sheet_instances'), [Sym('path'), '/', [Sym('page'), '1']]],
