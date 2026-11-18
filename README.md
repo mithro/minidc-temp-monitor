@@ -9,8 +9,7 @@ that is cheap enough to build in quantity from LCSC / JLCPCB parts.
 
 First hardware revision drawn, not yet built. [hardware/](hardware/README.md)
 holds KiCad 9 files for the sensor strip board (v0.1) in two versions, one
-per microcontroller. Both pass ERC and DRC. There is no firmware yet, and no
-boards have been ordered.
+per microcontroller. Both pass ERC and DRC. There is no firmware yet.
 
 ## Current direction (draft, not yet final)
 
@@ -21,8 +20,8 @@ boards have been ordered.
   so there are no address straps.
 - **Chain:** by default each board relays the bus to the next one (I2C
   target upstream, bit-banged controller downstream), so every cable is its
-  own short bus. This replaces the separate redriver / mux board that was
-  planned earlier. A shared pass-through bus is a build option.
+  own short bus and no separate redriver board is needed. A shared
+  pass-through bus is a build option.
 - **Aisle link:** PCA9615 differential I2C over RJ45 / Cat5e, following
   SparkFun QwiicBus pin use.
 - **Hub:** ESP32 or RP2040 with a TCA9548A mux, separate buses for the
@@ -34,8 +33,9 @@ The aisle link, hub and humidity items are still the research-phase draft
 and have not been revisited since the sensor board changed to a
 microcontroller.
 
-Open questions: 3.3 V or 5 V on the chain, cable length per aisle, points
-per rack face, and how firmware does self-addressing and the relay.
+Open questions: whether the chain runs at 3.3 V (Qwiic style, as the
+research assumed) or 5 V, cable length per aisle, points per rack face, and
+how firmware does self-addressing and the relay.
 
 ## Documentation
 

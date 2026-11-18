@@ -317,7 +317,7 @@ def draw(variant, project):
     net = lambda ref, pin: s.expect[ref][pin]
     s.text(v['title'], 20.32, 22.86, size=2.54, bold=True)
 
-    # --- I2C pass-through: J1, 0R links (shared bus), downstream pull-ups, J2 ---------------------------
+    # --- I2C pass-through: J1, 0R links (shared bus), downstream pull-ups, J2 -------------------
     s.frame('I2C pass-through and chain option links', 20.32, 27.94, 200.66, 73.66)
     j1 = s.place('J1', 38.1, 53.34, mirror='y', ref_at=(-3.81, -1.27, ['left']), val_at=(-3.81, 1.27, ['left']))
     j2 = s.place('J2', 182.88, 53.34, ref_at=(3.81, -1.27, ['left']), val_at=(3.81, 1.27, ['left']))
