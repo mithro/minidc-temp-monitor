@@ -2,7 +2,7 @@
 
 Nov 16, 2026 · Tim 'mithro' Ansell
 
-> Exported from the [original Claude Doc](https://claude.ai/artifact/NNGkVAbaxvyX1meoYzW1v9) on 2026-11-16. Prices and stock are a snapshot from that date.
+> Prices and stock are a snapshot from 2026-11-16.
 
 ## Summary
 
