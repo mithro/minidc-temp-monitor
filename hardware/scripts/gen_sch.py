@@ -91,7 +91,8 @@ VARIANTS = {
 
 GENERAL_NOTES = [
     'Chain wiring is a build option:',
-    '  Relay (default): R5 and R6 (4k7) fitted as the pull-ups of the hop to the next board.  R3 and R4 unfitted.',
+    '  Relay (default): R3 and R4 unfitted.  R5 and R6 (4k7) are the pull-ups of the hop to the next board.',
+    '  R5 and R6 are optional: without them firmware uses the internal pull-ups (35 to 55 k) at low speed.',
     '  Shared bus: fit R3 and R4 (0R) and remove R5 and R6.  The only pull-ups are then the ones on the hub.',
     'The hop from the hub to the first board uses the pull-ups on the hub.',
 ]
@@ -336,7 +337,7 @@ def draw(variant, project):
     s.stub(r5['1'], 2.54, 'VDD'); s.stub(r6['1'], 2.54, 'VDD')
     s.wire(r5['2'][:2], (132.08, 55.88)); s.wire(r6['2'][:2], (144.78, 58.42))
     s.text('Shared bus: fit R3 and R4 instead', 86.36, 69.85)
-    s.text('Relay (default): R5 and R6 fitted', 152.4, 35.56)
+    s.text('Relay (default): R5 and R6 fitted (optional)', 152.4, 35.56)
 
     # --- Microcontroller ------------------------------------------------------------------------
     s.frame('Microcontroller', 20.32, 83.82, 109.22, 147.32)
