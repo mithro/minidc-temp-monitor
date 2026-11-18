@@ -27,6 +27,36 @@ There are two versions of the same board, differing only in the microcontroller:
 - The thermistor sits on a finger cut free of the board on three sides, with no
   copper pour, so it follows the air rather than the board.
 
+## Supply voltage
+
+The boards run from 3.3 V or 5 V on VDD (J1/J2 pin 2) with no fitting change.
+There is no regulator: VDD feeds the microcontroller directly and passes
+straight through to the next board, so one chain runs at one voltage.
+
+| | At 3.3 V | At 5 V | Limit |
+|---|---|---|---|
+| CH32V003 supply | ok | ok | 2.7 to 5.5 V, 2.8 V or more for the ADC |
+| CH32V005 supply | ok | ok | 2.0 to 5.5 V, 2.4 V or more for the ADC |
+| C1, C3 (100n) and C2 (1u) | ok | ok | rated 16 V and 25 V |
+| Identify LED through R2 (1k) | about 1.4 mA | about 3 mA | 20 mA |
+| R5, R6 pull-up current (4k7) | 0.7 mA | 1.1 mA | 3 mA for standard I2C |
+| Thermistor self-heating at 25 C | about 27 uW | about 63 uW | negligible |
+
+- The thermistor reading is ratiometric. The divider and the ADC reference both
+  hang off VDD, so the reading does not depend on the supply voltage. Firmware
+  must work from the ADC ratio and never assume a VDD value.
+- Never put more than 5.5 V on VDD. That is the absolute maximum of both
+  microcontrollers, and there is no protection on the board.
+- 5 V leaves far more room for voltage drop along a long chain than 3.3 V does
+  (2.2 V against 0.5 V before the CH32V003 ADC limit).
+- The hub must suit the chain voltage. The simple case is hub pull-ups to the
+  same rail as VDD. A 3.3 V hub can also drive a 5 V chain if its pull-ups go
+  to 3.3 V, because both microcontrollers read 3.3 V as high at VDD = 5 V
+  (input high threshold about 2.1 V on the CH32V003 and 2.2 V on the
+  CH32V005). Do not pull the bus up to 5 V on a 3.3 V chain.
+- Qwiic and STEMMA QT cables and the JST SH connectors carry either voltage,
+  but standard Qwiic boards are 3.3 V only. Do not plug one into a 5 V chain.
+
 ## Chain wiring option
 
 | Mode | R3, R4 (0R) | R5, R6 (4k7) | Behaviour |
@@ -68,7 +98,8 @@ Needs KiCad 9 (`kicad-cli` and the `pcbnew` Python module) and numpy.
   high before sampling, so C3 has settled.
 - CH32V003: the LED sits on the SWIO pin. Light it by driving PD4 or PD5 low and
   leave PD1 as SWIO. Pin 1 is PD6 and PA1 bonded together, so keep PD6 an input.
-- CH32V003: the ADC wants VDD of 2.8 V or more. Watch the drop on long chains.
+- CH32V003: the ADC wants VDD of 2.8 V or more. Watch the drop on long chains,
+  mainly at 3.3 V.
 
 ## Known gaps in v0.1
 
