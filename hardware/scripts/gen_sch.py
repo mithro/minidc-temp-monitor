@@ -6,7 +6,9 @@ Usage: gen_sch.py <variant> <out.kicad_sch>     variant = ch32v003 | ch32v005
 The sheet is drawn in functional blocks with wires, power symbols and short
 labelled stubs.  PINS holds the intended net of every pin, and the script
 checks the drawn sheet against it with `kicad-cli sch export netlist`.
-Symbols are copied from the stock KiCad library.
+Symbols are copied from the stock KiCad library, except the MCUs: those are
+adjusted copies, written to ../lib/minidc.kicad_sym with a sym-lib-table
+beside each project (both generated; do not edit by hand).
 """
 import math, os, subprocess, sys, tempfile, uuid
 from sexp import loads, dumps, find, first, Sym
@@ -162,7 +164,7 @@ class Sheet:
         self.expect = {ref: dict(COMMON_PINS.get(ref, {}), **v['pins'].get(ref, {})) for ref in self.parts}
         self.root = uid(variant, 'root')
         self.libsyms, self.items, self.wires, self.pin_points, self.n = {}, [], [], [], 0
-        self.placed, self.local = set(), {}
+        self.placed = set()
 
     def _uid(self, kind):
         self.n += 1
@@ -173,7 +175,6 @@ class Sheet:
         src = lib_symbol(lib, name)
         if lib == 'MCU_WCH_RiscV':
             lid, src = f'{LOCAL_LIB}:{name}', adjusted(src)
-            self.local[name] = src
         if lid not in self.libsyms:
             copy = loads(dumps(src))
             copy[1] = lid
@@ -203,6 +204,7 @@ class Sheet:
 
     def place(self, ref, x, y, rot=0, mirror=None, ref_at=(2.54, -1.27, ['left']), val_at=(2.54, 1.27, ['left'])):
         """Place a part.  Returns {pin: (x, y, (dx, dy))} with the direction pointing away from the body."""
+        assert not (mirror and rot), 'mirror is only handled for unrotated symbols'
         lib, name, value, fp, lcsc, dnp = self.parts[ref]
         lid, table = self._lib(lib, name)
         self._symbol(lid, table, ref, value, x, y, rot, mirror, fp, lcsc, dnp, bool(fp) and ref[0] not in 'HT',
@@ -400,7 +402,7 @@ def check(sch, sheet):
     with tempfile.TemporaryDirectory() as d:
         out = os.path.join(d, 'n.net')
         subprocess.run(['kicad-cli', 'sch', 'export', 'netlist', '--format', 'kicadsexpr', '-o', out, sch],
-                       check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                       check=True, stdout=subprocess.DEVNULL)
         t = loads(open(out).read())
     got = {}
     for n in find(first(t, 'nets'), 'net'):

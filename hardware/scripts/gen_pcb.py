@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Place the MCU temperature sensor board and write an unrouted or routed PCB.
 
-Usage: gen_pcb.py <variant> <project dir> [--route]
+Usage: gen_pcb.py <variant> <project dir> [--route [--no-pour]]
 
 Reads the schematic next to the PCB (via `kicad-cli sch export netlist`),
 loads stock KiCad footprints, places them from the tables below, draws the
-outline, optionally routes it with scripts/route.py, then pours the ground zones.
+outline and, with --route, routes it with scripts/route.py and pours the ground
+zones (--no-pour stops after routing).  Exits non-zero if anything is left unrouted.
 """
 import math, os, subprocess, sys, tempfile
 import pcbnew
@@ -22,7 +23,7 @@ OUTLINE = [(0, 0), (15, 0), (15, 1.2), (17.5, 1.2), (17.5, 0), (25, 0), (25, 3.6
            (33, 2.6), (26, 2.6), (26, 0), (L, 0), (L, W), (17.5, W), (17.5, W - 1.2),
            (15, W - 1.2), (15, W), (0, W)]
 
-HOLE_KEEPOUT = (10.5, 6.5, 3.0)   # M3 screw head, kept clear of tracks and vias
+HOLE_KEEPOUT = (10.5, 6.5, 3.8)   # M3 screw head or 7 mm washer, kept clear of tracks and vias
 
 EP_VIA = {'ch32v005': (24.3, 7.4)}  # ground via in the QFN exposed pad
 
@@ -39,7 +40,7 @@ COMMON_PLACE = {
 }
 PLACE = {
     'ch32v003': dict(COMMON_PLACE, U1=(24.3, 7.4, 180), TP1=(19.6, 11.6, 0), TP2=(21.9, 11.6, 0), TP3=(24.2, 11.6, 0)),
-    'ch32v005': dict(COMMON_PLACE, U1=(24.3, 7.4, 0), TP1=(19.6, 11.6, 0), TP2=(21.9, 11.6, 0), TP3=(24.2, 11.6, 0),
+    'ch32v005': dict(COMMON_PLACE, U1=(24.3, 7.4, 0), C1=(22.9, 10.0, 180), TP1=(19.6, 11.6, 0), TP2=(21.9, 11.6, 0), TP3=(24.2, 11.6, 0),
                      TP4=(26.5, 11.6, 0), TP5=(28.8, 11.6, 0), TP6=(31.1, 11.6, 0)),
 }
 SILK_NAME = {'ch32v003': 'CH32V003', 'ch32v005': 'CH32V005'}
@@ -137,7 +138,7 @@ def build(variant, pdir):
     pcbnew.SaveBoard(pcb, board)
     return pcb
 
-def route(pcb, variant, tries=15):
+def route(pcb, variant, tries=25):
     """Route with the grid router in route.py.
 
     Ground is a pour on both layers, so each ground pad only gets a via to the
@@ -159,13 +160,19 @@ def route(pcb, variant, tries=15):
             far = {c for c in r.via_ends['GND'] if math.hypot(c[1] * 0.1 - ep[1] * 0.1, c[2] * 0.1 - ep[2] * 0.1) > 4}
             if not r.tie('GND', {ep}, far, 0.3):
                 failed['GND'].append('U1')
+        # decoupling first: C1 straight to the MCU supply pin, and the connector trunks meet at C1
+        failed['VDD'] = r.route_net('VDD', refs=['C1', 'U1'], stubs=True)
+        # ground trunk on the back between the connectors' ground vias, so that later
+        # back-layer tracks cannot cut the ground path along the chain
+        if not r.tie('GND', {r.pad_via[('J1', '1')]}, {r.pad_via[('J2', '1')]}, 0.4, vias=False):
+            failed['GND'].append('trunk')
         if order is None:
             span = lambda net: max(abs(a[3][0] - b[3][0]) + abs(a[3][1] - b[3][1]) for a in r.pads[net] for b in r.pads[net])
             order = sorted((n for n in r.pads if n != 'GND' and len(r.pads[n]) > 1), key=span)
         for net in order:
-            failed[net] = []
+            failed.setdefault(net, [])
             if net == 'VDD':                                  # wide trunk from connector to connector
-                failed[net] = r.route_net(net, 0.4, refs=['J1', 'J2'])
+                failed[net] += r.route_net(net, 0.4, refs=['J1', 'J2'])
             failed[net] += r.route_net(net)
         failed = {k: v for k, v in failed.items() if v}
         print(f'attempt {attempt}: not routed {failed}' if failed else f'attempt {attempt}: all routed', flush=True)
@@ -174,6 +181,8 @@ def route(pcb, variant, tries=15):
         seen = set(failed)
         order = [n for n in order if n in failed] + [n for n in order if n not in failed]
     pcbnew.SaveBoard(pcb, board)
+    if failed:
+        raise SystemExit(f'{pcb}: routing failed, unrouted board saved for inspection')
     return r
 
 def ground_groups(board, net):
@@ -205,16 +214,17 @@ def ground_groups(board, net):
         join([me] + at(v.GetPosition(), pcbnew.F_Cu) + at(v.GetPosition(), pcbnew.B_Cu))
     for t in board.GetTracks():
         if t.Type() != pcbnew.PCB_VIA_T and t.GetNetname() == net:
-            join(at(t.GetStart(), t.GetLayer()) + at(t.GetEnd(), t.GetLayer()))
+            ends = [('pt', t.GetLayer(), p.x, p.y) for p in (t.GetStart(), t.GetEnd())]   # bends join segments
+            join(ends + at(t.GetStart(), t.GetLayer()) + at(t.GetEnd(), t.GetLayer()))
     groups = {}
     for v in vias:
         groups.setdefault(find(('via', v.GetPosition().x, v.GetPosition().y)), []).append(v)
     return sorted(groups.values(), key=len, reverse=True)
 
-def pour(pcb, router=None):
+def pour(pcb, router):
     """Add the ground zones and fill them.  Signal tracks can cut a piece of pour
     off from the rest; such a piece is tied back with a track and the fill redone."""
-    board = router.board if router else pcbnew.LoadBoard(pcb)
+    board = router.board
     gnd = board.FindNet('GND')
     for layer in (pcbnew.F_Cu, pcbnew.B_Cu):
         z = pcbnew.ZONE(board)
@@ -226,15 +236,17 @@ def pour(pcb, router=None):
         for x, y in POUR:
             o.Append(FromMM(X0 + x), FromMM(Y0 + y))
         board.Add(z)
-    for _ in range(4):
+    cells = lambda vs: {(l, int(round((ToMM(v.GetPosition().x) - X0) / 0.1)), int(round((ToMM(v.GetPosition().y) - Y0) / 0.1)))
+                        for v in vs for l in (0, 1)}
+    for attempt in range(5):
         pcbnew.ZONE_FILLER(board).Fill(board.Zones())
         groups = ground_groups(board, 'GND')
-        if len(groups) < 2 or not router:
+        if len(groups) < 2:
             break
-        cells = lambda vs: {(l, int(round((ToMM(v.GetPosition().x) - X0) / 0.1)), int(round((ToMM(v.GetPosition().y) - Y0) / 0.1)))
-                            for v in vs for l in (0, 1)}
-        for g in groups[1:]:
-            print('tying cut-off ground piece:', 'ok' if router.tie('GND', cells(g), cells(groups[0])) else 'FAILED')
+        if attempt == 4 or not all(router.tie('GND', cells(g), cells(groups[0])) for g in groups[1:]):
+            pcbnew.SaveBoard(pcb, board)
+            raise SystemExit(f'{pcb}: ground is in {len(groups)} pieces and could not be tied together')
+        print(f'tied {len(groups) - 1} cut-off ground piece(s)')
     pcbnew.SaveBoard(pcb, board)
 
 if __name__ == '__main__':

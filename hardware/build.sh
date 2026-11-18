@@ -5,6 +5,7 @@
 #   ./build.sh export    only redo the exports from the files as they are
 set -e
 cd "$(dirname "$0")"
+case "$1" in ""|export) ;; *) echo "usage: $0 [export]" >&2; exit 2 ;; esac
 for v in ch32v003 ch32v005; do
     p=sensor-$v/sensor-$v
     out=sensor-$v/out

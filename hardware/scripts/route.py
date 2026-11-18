@@ -19,6 +19,7 @@ VIA_D, VIA_DRILL = 0.6, 0.3
 BASE = 0.1                     # half width of the narrowest track; keep-outs are stored for it
 SLOP = 0.03                    # margin on pad and edge keep-outs, mm
 TSLOP = 0.02                   # margin on track keep-outs, mm
+VIA_PAD = 0.4                  # via centre to any pad edge, mm (hole edge 0.25 mm clear)
 VSLOP = 0.06                   # margin on via keep-outs, mm
 VIA_COST, BACK_COST = 60.0, 1.6
 CROWD_R, CROWD_COST = 1.2, 2.0  # keep tracks from hugging other nets' small pads
@@ -37,18 +38,18 @@ class Router:
         self.via = np.zeros((self.nx, self.ny), np.int32)      # via-centre ownership
         self.netid = {}
         edge = self._edge_distance(outline)
-        self.edge = edge
         self.trk[:, edge < EDGE + BASE + SLOP] = -1
         self.via[edge < EDGE + VIA_D / 2 + SLOP] = -1
         for x, y, r in keepouts:
             d = np.hypot(self.X - x, self.Y - y)
             self.trk[:, d < r + BASE] = -1
             self.via[d < r + VIA_D / 2] = -1
-        self.trees, self.islands, self.done, self.via_ends = {}, {}, set(), {}
+        self.trees, self.islands, self.done, self.via_ends, self.pad_via = {}, {}, set(), {}, {}
+        self.vias_at = set()
         self.crowd = np.zeros(self.trk.shape, np.float32)     # extra cost near pads still to be reached
         self.crowd_own = {}
         self.pads = {}                                          # net -> [(ref, pad, layers, bbox mm)]
-        for fp in board.GetFootprints():
+        for fp in sorted(board.GetFootprints(), key=lambda f: f.GetReference()):   # fixed order: repeatable routing
             for pad in fp.Pads():
                 on = [i for i, l in enumerate(LAYERS) if pad.IsOnLayer(l)]
                 if not on:
@@ -59,9 +60,9 @@ class Router:
                 net = pad.GetNetname()
                 n = self._id(net) if net else -1
                 for l in on:
-                    self._mark(self.trk[l], self._box(box, CLR + BASE - 0.01), n)
+                    self._mark(self.trk[l], self._box(box, CLR + BASE + 0.02), n)
                 self._mark(self.via, self._box(box, CLR + VIA_D / 2 + SLOP), n)
-                self.via[self._box(box, 0.1)] = -1              # no via in pad
+                self.via[self._box(box, VIA_PAD)] = -1          # keep via holes out of and away from pads
                 if net and min(box[2] - box[0], box[3] - box[1]) < 0.7:
                     m = self._box(box, CROWD_R)
                     for l in on:
@@ -109,14 +110,13 @@ class Router:
     def _ok(self, n, width):
         """Cells a track centre of this net and width may occupy, per layer."""
         ok = (self.trk == 0) | (self.trk == n)
-        k = int(round((width / 2 - BASE) / G))
+        k = int(math.ceil((width / 2 - BASE) / G - 1e-9))
         bad = ~ok
         grown = bad.copy()
         for di in range(-k, k + 1):
             for dj in range(-k, k + 1):
                 if (di or dj) and di * di + dj * dj <= k * k:
                     grown |= np.roll(bad, (di, dj), axis=(1, 2))
-        # cells inside this net's own pads stay usable so a track can leave the pad
         return ~grown, ok
 
     def _pad_cells(self, box, layers):
@@ -169,19 +169,20 @@ class Router:
             self._commit(net, n, 0.2, path)
             self.done.add(id(pad))
             self.via_ends.setdefault(net, set()).add(path[-1])
+            self.pad_via[(ref, pad.GetNumber())] = path[-1]
         return failed
 
-    def tie(self, net, sources, targets, width=0.2):
+    def tie(self, net, sources, targets, width=0.2, vias=True):
         """Join two sets of cells of one net with a track.  True on success."""
         xs, ys = [c[1] * G for c in targets], [c[2] * G for c in targets]
-        path = self._search(net, self._id(net), width, sources, set(targets), (min(xs), min(ys), max(xs), max(ys)))
+        path = self._search(net, self._id(net), width, sources, set(targets), (min(xs), min(ys), max(xs), max(ys)), vias)
         if path:
             self._commit(net, self._id(net), width, path)
         return bool(path)
 
-    def route_net(self, net, width=0.2, refs=None):
+    def route_net(self, net, width=0.2, refs=None, stubs=None):
         """Connect the pads of a net (only those on `refs` if given, in that order),
-        then the stubs made by escape().  Returns the refs that could not be reached."""
+        then the stubs made by escape() (by default only when `refs` is not given).  Returns the refs that could not be reached."""
         n = self._id(net)
         pads = [p for p in self.pads.get(net, []) if id(p[1]) not in self.done]
         if refs:
@@ -208,7 +209,7 @@ class Router:
             self._commit(net, n, width, path)
             self.done.add(id(pad))
             tree |= set(path) | self._pad_cells(box, layers)
-        while not refs and self.islands.get(net):
+        while (stubs if stubs is not None else not refs) and self.islands.get(net):
             isl = self.islands[net].pop()
             xs, ys = [c[1] * G for c in tree], [c[2] * G for c in tree]
             path = self._search(net, n, 0.2, isl, tree, (min(xs), min(ys), max(xs), max(ys)))
@@ -219,13 +220,13 @@ class Router:
             tree |= set(path) | isl
         return failed
 
-    def _search(self, net, n, width, sources, targets, tbox):
+    def _search(self, net, n, width, sources, targets, tbox, vias=True):
         wide, plain = self._ok(n, width)
         own = np.zeros(self.trk.shape, bool)
         for _, _, layers, box in self.pads.get(net, []):
             for l in layers:
                 own[l] |= self._box(box, 0.0)
-        ok = wide | (plain & own)
+        ok = wide | (plain & own)                              # a track may always leave its own pad
         via_ok = ((self.via == 0) | (self.via == n)) & wide[0] & wide[1]
         crowd = (self.crowd - self.crowd_own.get(net, 0)) * CROWD_COST
         tx, ty = (tbox[0] + tbox[2]) / 2 / G, (tbox[1] + tbox[3]) / 2 / G
@@ -264,7 +265,7 @@ class Router:
                     continue
                 step = (1.4142 if di and dj else 1.0) * (BACK_COST if l else 1.0)
                 self._push(heap, best, prev, s, (l, a, b, nd), c + step + (0, 1.5, 6)[turn] + crowd[l, a, b], h(a, b))
-            if via_ok[i, j] and ok[1 - l, i, j]:
+            if vias and via_ok[i, j] and ok[1 - l, i, j]:
                 self._push(heap, best, prev, s, (1 - l, i, j, 8), c + VIA_COST, h(i, j))
         return None
 
@@ -306,6 +307,9 @@ class Router:
                     a = run[k]
 
     def _add_via(self, ni, n, i, j):
+        if (i, j) in self.vias_at:                             # a layer change at a via that is already there
+            return
+        self.vias_at.add((i, j))
         v = pcbnew.PCB_VIA(self.board)
         v.SetPosition(self._pt(i, j)); v.SetWidth(pcbnew.F_Cu, FromMM(VIA_D)); v.SetDrill(FromMM(VIA_DRILL))
         v.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu); v.SetNet(ni)
