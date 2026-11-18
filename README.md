@@ -33,9 +33,11 @@ The aisle link, hub and humidity items are still the research-phase draft
 and have not been revisited since the sensor board changed to a
 microcontroller.
 
-Open questions: whether the chain runs at 3.3 V (Qwiic style, as the
-research assumed) or 5 V, cable length per aisle, points per rack face, and
-how firmware does self-addressing and the relay.
+The sensor boards run from 3.3 V or 5 V, so the chain voltage is a hub
+choice (see [hardware/](hardware/README.md#supply-voltage)).
+
+Open questions: cable length per aisle, points per rack face, and how
+firmware does self-addressing and the relay.
 
 ## Documentation
 
