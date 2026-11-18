@@ -109,6 +109,25 @@ def lib_symbol(lib, name):
             return s
     raise SystemExit(f'{lib}:{name} not found')
 
+LOCAL_LIB = 'minidc'       # project symbol library for the adjusted MCU symbols
+
+def adjusted(sym):
+    """Copy of a stock MCU symbol with the text collisions fixed: pins lengthened
+    to 5.08 mm so two-digit pin numbers clear the body, and on the SOP-8 part the
+    power pins moved off centre so their names clear the long PD1/PD4/PD5 name."""
+    sym = loads(dumps(sym))
+    for unit in find(sym, 'symbol'):
+        for p in find(unit, 'pin'):
+            at, length = first(p, 'at'), first(p, 'length')
+            ang = int(float(at[3])) if len(at) > 3 else 0
+            grow = 5.08 - float(length[1])
+            at[1] = round(float(at[1]) - grow * round(math.cos(math.radians(ang))), 4)
+            at[2] = round(float(at[2]) - grow * round(math.sin(math.radians(ang))), 4)
+            length[1] = 5.08
+            if sym[1] == 'CH32V003JxMx' and ang in (90, 270):
+                at[1] = -5.08
+    return sym
+
 def pin_table(sym):
     """number -> (x, y, angle)"""
     out = {}
@@ -143,7 +162,7 @@ class Sheet:
         self.expect = {ref: dict(COMMON_PINS.get(ref, {}), **v['pins'].get(ref, {})) for ref in self.parts}
         self.root = uid(variant, 'root')
         self.libsyms, self.items, self.wires, self.pin_points, self.n = {}, [], [], [], 0
-        self.placed = set()
+        self.placed, self.local = set(), {}
 
     def _uid(self, kind):
         self.n += 1
@@ -152,6 +171,9 @@ class Sheet:
     def _lib(self, lib, name):
         lid = f'{lib}:{name}'
         src = lib_symbol(lib, name)
+        if lib == 'MCU_WCH_RiscV':
+            lid, src = f'{LOCAL_LIB}:{name}', adjusted(src)
+            self.local[name] = src
         if lid not in self.libsyms:
             copy = loads(dumps(src))
             copy[1] = lid
@@ -315,26 +337,26 @@ def draw(variant, project):
     s.text('Relay: fit R5 and R6 instead', 152.4, 35.56)
 
     # --- Microcontroller ------------------------------------------------------------------------
-    s.frame('Microcontroller', 20.32, 83.82, 109.22, 142.24)
-    u1 = s.place('U1', 66.04, 116.84, ref_at=(-20.32, -16.51, ['left']), val_at=(-20.32, -13.97, ['left']))
+    s.frame('Microcontroller', 20.32, 83.82, 109.22, 147.32)
+    u1 = s.place('U1', 66.04, 116.84, ref_at=(-25.4, -16.51, ['left']), val_at=(-25.4, -13.97, ['left']))
     for num, pin in u1.items():
         name = net('U1', num)
         if name:
             s.stub(pin, 2.54 if name in POWER else 5.08, name)
 
     # --- Decoupling -----------------------------------------------------------------------------
-    s.frame('Supply decoupling', 114.3, 83.82, 160.02, 142.24)
+    s.frame('Supply decoupling', 114.3, 83.82, 160.02, 147.32)
     c1 = s.place('C1', 129.54, 114.3)
     c2 = s.place('C2', 142.24, 114.3)
     top, bot = 106.68, 121.92
-    s.wire((121.92, top), (142.24, top)); s.wire((129.54, bot), (152.4, bot))
+    s.wire((121.92, top), (142.24, top)); s.wire((121.92, bot), (142.24, bot))
     for c in (c1, c2):
         s.wire(c['1'][:2], (c['1'][0], top)); s.wire(c['2'][:2], (c['2'][0], bot))
     s.power('VDD', 135.89, top); s.power('GND', 135.89, bot)
-    s.flag(121.92, top); s.flag(152.4, bot)
+    s.flag(121.92, top); s.flag(121.92, bot)
 
     # --- Identify LED ---------------------------------------------------------------------------
-    s.frame('Identify LED', 165.1, 83.82, 190.5, 142.24)
+    s.frame('Identify LED', 165.1, 83.82, 190.5, 147.32)
     r2 = s.place('R2', 172.72, 104.14)
     d1 = s.place('D1', 172.72, 115.57, rot=90, ref_at=(3.81, -1.27, ['right']), val_at=(3.81, 1.27, ['right']))
     s.stub(r2['1'], 2.54, 'VDD')
@@ -342,7 +364,7 @@ def draw(variant, project):
     s.wire(d1['1'][:2], (172.72, 124.46), (176.53, 124.46)); s.label(net('D1', '1'), 176.53, 124.46, (1, 0))
 
     # --- Thermistor divider ---------------------------------------------------------------------
-    s.frame('Thermistor divider', 195.58, 83.82, 251.46, 142.24)
+    s.frame('Thermistor divider', 195.58, 83.82, 248.92, 147.32)
     r1 = s.place('R1', 217.17, 104.14)
     rt = s.place('RT1', 217.17, 119.38, ref_at=(3.81, -1.27, ['left']), val_at=(3.81, 1.27, ['left']))
     c3 = s.place('C3', 240.03, 119.38)
@@ -357,13 +379,13 @@ def draw(variant, project):
 
     # --- Test pads and mounting -----------------------------------------------------------------
     tps = sorted((r for r in s.parts if r.startswith('TP')), key=lambda r: int(r[2:]))
-    s.frame('Test pads, mounting', 256.54, 83.82, 284.48, 152.4)
+    s.frame('Test pads', 252.73, 83.82, 280.67, 147.32)
     y = 93.98
     for ref in tps:
-        tp = s.place(ref, 271.78, y, rot=270, ref_at=(3.81, 0, ['left']), val_at=(0, 0, 'hide'))
+        tp = s.place(ref, 269.24, y, rot=270, ref_at=(5.08, 0, ['left']), val_at=(0, 0, 'hide'))
         s.stub(tp['1'], 5.08, net(ref, '1'))
-        y += 7.62
-    s.place('H1', 269.24, 146.05, ref_at=(3.81, -1.27, ['left']), val_at=(3.81, 1.27, ['left']))
+        y += 10.16 if net(ref, '1') == 'GND' else 7.62
+    s.place('H1', 266.7, 141.605, ref_at=(3.81, -1.27, ['left']), val_at=(3.81, 1.27, ['left']))
 
     y = 160.02
     for line in v['notes'] + [''] + GENERAL_NOTES:
@@ -394,8 +416,23 @@ def check(sch, sheet):
     if bad:
         raise SystemExit('schematic does not match the pin table:\n  ' + '\n  '.join(bad))
 
+def write_library(pdir):
+    """Write the project symbol library and the table that points the project at it."""
+    syms = []
+    for name in sorted(p[1] for v in VARIANTS.values() for p in v['parts'].values() if p[0] == 'MCU_WCH_RiscV'):
+        syms.append(adjusted(lib_symbol('MCU_WCH_RiscV', name)))
+    libdir = os.path.join(pdir, '..', 'lib')
+    os.makedirs(libdir, exist_ok=True)
+    lib = [Sym('kicad_symbol_lib'), [Sym('version'), 20241209], [Sym('generator'), 'gen_sch'],
+           [Sym('generator_version'), '9.0']] + syms
+    open(os.path.join(libdir, LOCAL_LIB + '.kicad_sym'), 'w').write(dumps(lib) + '\n')
+    open(os.path.join(pdir, 'sym-lib-table'), 'w').write(
+        '(sym_lib_table\n  (version 7)\n  (lib (name "%s")(type "KiCad")(uri "${KIPRJMOD}/../lib/%s.kicad_sym")'
+        '(options "")(descr "Adjusted MCU symbols for the sensor boards"))\n)\n' % (LOCAL_LIB, LOCAL_LIB))
+
 if __name__ == '__main__':
     variant, out = sys.argv[1], sys.argv[2]
     sheet = draw(variant, os.path.splitext(os.path.basename(out))[0])
     open(out, 'w').write(sheet.dumps())
+    write_library(os.path.dirname(os.path.abspath(out)))
     check(out, sheet)
