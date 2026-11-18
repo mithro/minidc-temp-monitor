@@ -1,8 +1,9 @@
 # Cables to order
 
 What to buy to join about 200 sensor boards into chains and to connect each
-chain to a hub. Checked on 2026-11-18. Prices and stock move, so confirm them
-at checkout.
+chain to a hub. Written on 2026-11-18. The JLC and LCSC figures were read from
+those sites that day; the AliExpress figures are less certain (see below).
+Prices and stock move, so confirm them at checkout.
 
 ## Order list
 
@@ -27,7 +28,12 @@ How sure each line is:
   to the build environment, so the 4-pin price at each length is not confirmed.
 - Line 5: the listing is for double-ended SH 1.0 leads in lots of 5 with "Same
   Side" and "Reverse Side" options. That it has a 4-pin 30 cm option, and its
-  price, are not confirmed. Any double-ended SH 1.0 4-pin 30 cm lead will do.
+  price, are not confirmed. Any double-ended SH 1.0 4-pin 30 cm lead will do;
+  search AliExpress for "SH1.0 4P double head cable 30cm reverse".
+- The links go to the US AliExpress site. Other regions redirect to the same
+  item.
+- Sellers quote the wire length between the housings, and cheap leads vary by
+  a few millimetres.
 - Line 6: read from LCSC. $0.1093 each at 5 or more, 200 in stock, sold in
   multiples of 5.
 
@@ -59,17 +65,22 @@ twisted, then look at the two housings:
   this "same" (同向). It swaps GND with SCL and VDD with SDA, so it puts the
   supply across the wrong pins. Do not use it.
 
-The seller names are not standardised, and the listing picture could not be
+The seller names are not standardised, and the listing pictures could not be
 checked, so "reverse" is the expected answer, not a confirmed one. Line 4 buys
-one lot of the other type so both are on the bench. Before plugging anything
-in, check one lead of each type with a meter, pin 1 to pin 1, and use the type
-that passes. If the bulk lot turns out to be the wrong type, re-order in the
-other direction; the cost of that is about $35 and the delivery time.
+one lot of the other type so both are on the bench. Check one lead from every
+lot, including the 30 cm lot from the second seller, before powering anything.
+The easy way is to plug the lead between two unpowered boards and measure
+between the same pad on each board: J1 pin 1 (GND) on one must connect to J2
+pin 1 on the other, and must not connect to pin 4. Use the type that passes.
+If the bulk lots turn out to be the wrong type, re-order in the other
+direction; the cost of that is about $38 and the delivery time.
 
 A straight-through lead between two boards mounted in line, both face up, sits
 with a half twist in it. That is normal and is how Qwiic cables sit.
 
-Wire colours on generic leads follow no standard. Go by pin position.
+Wire colours on generic leads follow no standard. Go by pin position. For a
+single-ended lead, plug it into J1 of an unpowered board and use the meter to
+find which loose wire reaches each pad, then label the wires.
 
 ## Lengths and quantities
 
@@ -92,8 +103,8 @@ The 15 cm lead works at any pitch up to 3U, with a loop of spare cable at
 closer spacing, so 200 of them could build the whole chain alone. The 10 cm and
 20 cm lots are for tidier close spacing and for 4U to 5U spacing. The 30 cm
 lot is for jumps between rack faces or racks and for hub connections. The 400
-pieces are twice what a 200-board build uses; the surplus is what covers not
-knowing the mix. Once the pitch is fixed, 220 leads of the right length are
+pieces include 370 board-to-board leads, nearly twice what a 200-board build
+uses; the surplus is what covers not knowing the mix. Once the pitch is fixed, 220 leads of the right length are
 enough.
 
 With the default relay fitting each cable is its own I2C bus, so cable length
@@ -113,10 +124,13 @@ The hub is not designed yet. Either hub style is covered by this order:
   to, because shipping costs more than the leads. The AliExpress sellers also
   list single-ended SH 1.0 4-pin leads.
 
-Plan for at least 8 chains, and so at least 8 head leads. Power is passed down
-the chain through 28 AWG wire and two contacts per hop, roughly 0.15 to 0.2
-ohm per hop for VDD and GND together. At an estimated 5 mA per board that
-drops about 0.2 V over 20 boards and about 0.4 V over 30. A 3.3 V chain has
-0.5 V to spare (see [Supply voltage](README.md#supply-voltage)), so keep 3.3 V
-chains to about 25 boards. A 5 V chain has 2.2 V to spare and can be longer.
-The per-board current is an estimate until firmware runs on real boards.
+Plan for at least 10 chains, and so at least 10 head leads. Power is passed
+down the chain through 28 AWG wire, four contacts and the board's own 0.4 mm
+VDD track at every hop, roughly 0.2 to 0.27 ohm per hop for VDD and GND
+together with 15 to 20 cm leads. At an estimated 5 mA per board that drops up
+to about 0.3 V over 20 boards and up to about 0.45 V over 25. A 3.3 V chain has
+0.5 V to spare before the CH32V003 ADC limit (see
+[Supply voltage](README.md#supply-voltage)), less whatever the hub regulator
+runs low, so keep 3.3 V chains to about 20 boards. A 5 V chain has 2.2 V to
+spare and can be longer. The per-board current and the track resistance are
+estimates until real boards are measured.

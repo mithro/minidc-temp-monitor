@@ -62,8 +62,8 @@ including estimated fabrication and assembly fees.
 
 ## Cables
 
-Generic double-ended JST SH 1.0 mm 4-pin leads from AliExpress, about $0.10
-each, wired straight through: pin 1 at one end must reach pin 1 at the other.
+Generic double-ended JST SH 1.0 mm 4-pin leads from AliExpress, listed at about
+$0.10 each, wired straight through: pin 1 at one end must reach pin 1 at the other.
 [CABLES.md](CABLES.md) has the order list, the lengths, how to tell the two
 wiring directions apart, and the leads for the hub end of each chain.
 

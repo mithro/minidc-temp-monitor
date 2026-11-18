@@ -24,12 +24,12 @@ per microcontroller. Both pass ERC and DRC. There is no firmware yet.
 - **Supply:** 3.3 V or 5 V, passed straight through the chain.
 - **Cost:** about $0.30 to $0.33 of parts per board, and an estimated $113
   to $118 for 200 assembled boards. See [hardware/COST.md](hardware/COST.md).
-- **Cables:** generic double-ended JST SH 4-pin leads from AliExpress, about
-  $41 for a 200-board build. See [hardware/CABLES.md](hardware/CABLES.md).
+- **Cables:** generic double-ended JST SH 4-pin leads from AliExpress, an
+  estimated $41 plus shipping for a 200-board build, hub leads included.
+  See [hardware/CABLES.md](hardware/CABLES.md).
 
-Not designed yet: the hub that powers and reads the chains, the link from
-the hub to the first board of each chain, humidity sensing, and the
-firmware (self-addressing and the relay).
+Not designed yet: the hub that powers and reads the chains, humidity
+sensing, and the firmware (self-addressing and the relay).
 
 Open questions: cable length per aisle and points per rack face.
 

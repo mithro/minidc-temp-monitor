@@ -116,7 +116,7 @@ Branded Qwiic and STEMMA QT cables are wired straight through and make a known-g
 | 300 mm | [Adafruit 5384](https://www.adafruit.com/product/5384) | $1.25 |
 | 500 mm | [SparkFun flexible PRT-14429](https://www.sparkfun.com/products/14429) | about $2.75 |
 
-Generic "JST SH 1.0 4-pin" double-ended leads from AliExpress-type sellers come wired straight or reversed. Pin 1 at one end must reach pin 1 at the other; [hardware/CABLES.md](../../hardware/CABLES.md#wiring-direction) shows how to tell them apart.
+Generic "JST SH 1.0 4-pin" double-ended leads from AliExpress-type sellers come in two wirings, pin 1 to pin 1 or pin 1 to pin 4, and sellers' names for them ("same" and "reverse") are not reliable. Pin 1 at one end must reach pin 1 at the other; [hardware/CABLES.md](../../hardware/CABLES.md#wiring-direction) shows how to tell them apart.
 
 For making cables to length:
 
@@ -142,7 +142,7 @@ NextPCB's parts store is [HQ Online](https://www.hqonline.com/), and the NextPCB
 
 ## Method and caveats
 
-- BEIXUNZE C54308409 has no LCSC page, so it links to JLC only. The CAX WAFER-SH1.0-4PWB is not on JLC or LCSC.
+- The CAX WAFER-SH1.0-4PWB is not on JLC or LCSC.
 - JLC data is from JLC's component search API with the terms SH1.0, SM04B, BM04B, 1.0-4P, "1x4P 1mm", "1.0mm 4P", JST SH and SHR-04V-S, filtered on the listed pitch of 1 mm and 4 pins, dropping "JLCPCB Assembly" placeholder rows, which have no stock. In the same data, Basic parts such as crystals show up as Basic, so the "no Basic SH connector" result is not a filter error.
 - "SH compatible" is based on the part name and JLC's "Reference Series: SH" field, not on mating tests. For clones, check the datasheet drawing against JST's [SH datasheet](https://www.jst-mfg.com/product/pdf/eng/eSH.pdf) and try one with a real Qwiic cable.
 - JLC charges a loading fee per unique Extended part per order; [hardware/COST.md](../../hardware/COST.md) has the fee used in the cost estimate. That estimate counts the fee once for each board version.
