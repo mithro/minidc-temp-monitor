@@ -65,8 +65,8 @@ How the copper is laid out:
 ## Panel
 
 JLCPCB assembles small boards as a panel. `scripts/gen_panel.py` builds one for
-each version: 16 boards (2 x 8) in a 107 x 132 mm frame, so 13 panels give 208
-boards. The cost estimate uses a round 200.
+each version: 16 boards (2 x 8) in a 107 x 132 mm frame. The quotes are for
+15 panels, 240 boards.
 
 | | Panel board | Gerbers | Parts list | Placement | Check |
 |---|---|---|---|---|---|
@@ -93,13 +93,16 @@ slot and the parts sit close to the edges.
 The JLCPCB figures used here (rail width, fiducial and tooling hole sizes,
 mouse-bite hole size and spacing) come from JLCPCB's help pages as found on
 18 Nov 2026. Their pages do not agree with each other on every number, so
-check the panel in JLCPCB's order preview before paying.
+check the panel in JLCPCB's order preview before paying. Both JLCPCB's and
+NextPCB's quote pages read the panel gerbers without errors
+([QUOTES.md](QUOTES.md)).
 
 ## Parts and cost
 
 Both boards share every part except the microcontroller. Prices are JLCPCB
-catalogue prices on 18 Nov 2026 for 200 boards; [COST.md](COST.md) has the full calculation,
-including estimated fabrication and assembly fees.
+catalogue prices on 18 Nov 2026 for 240 boards; [COST.md](COST.md) has the full calculation,
+with the quoted panel price and the assembly fees. [QUOTES.md](QUOTES.md)
+compares the JLCPCB and NextPCB production quotes.
 
 | Ref | Part | LCSC | Fitted |
 |---|---|---|---|
@@ -117,7 +120,8 @@ including estimated fabrication and assembly fees.
 | | `sensor-ch32v003` | `sensor-ch32v005` |
 |---|---|---|
 | Parts per board | $0.33 | $0.30 |
-| 200 boards assembled (estimate) | $118 | $114 |
+| 240 boards assembled, JLCPCB | $140 (lead-free HASL) | $233 (ENIG, X-ray) |
+| 240 boards assembled, NextPCB | $529 (lead-free HASL) | $651 (ENIG) |
 
 ## Cables
 
@@ -203,17 +207,20 @@ than editing the KiCad files by hand (hand edits are lost on the next build).
   models the renders use.
 - `scripts/cost.py` prices both boards from their parts lists and writes
   [COST.md](COST.md).
+- `scripts/gen_nextpcb.py` writes the parts list and placement file in the
+  form NextPCB's quote page takes, into `sensor-*/out/nextpcb/`.
 - `build.sh` runs all of the above for both versions, with ERC and DRC, and
   stops if either reports anything.
 - `sensor-*/out/` holds the schematic PDF, the 3D views, gerbers, the BOM and
   placement files in JLCPCB column layout, and the ERC and DRC reports.
   `sensor-*/out/panel/` holds the panel's gerbers (zipped), a render, its BOM
-  and placement files and its DRC report.
+  and placement files and its DRC report. `sensor-*/out/nextpcb/` holds the
+  NextPCB parts list and placement spreadsheets.
 - `scripts/sexp.py` is a small reader for KiCad's file format, used by the
   other scripts.
 
 Needs KiCad 9 (`kicad-cli`, the `pcbnew` Python module and the stock footprint
-library), Pillow, the DejaVu fonts and zip.
+library), Pillow, openpyxl, the DejaVu fonts and zip.
 
 ## Notes for firmware
 
@@ -254,11 +261,16 @@ library), Pillow, the DejaVu fonts and zip.
 - On the CH32V003 board C1, C2, C3 and R1 have no designator: there is no room
   beside them. From the top they are R1, C3, C2, C1 in the column left of U1.
 - CH32V005: the ground via sits in the exposed pad and is open on the top
-  side, so some solder can run into it. The QFN is 0.4 mm pitch; ask JLCPCB
-  whether their standard HASL finish is acceptable for it or whether it needs
-  ENIG, which costs more. [COST.md](COST.md) assumes the standard finish.
-- The panel follows JLCPCB's published rules as far as they could be read, but
-  JLCPCB has not reviewed it.
+  side, so some solder can run into it. The QFN is 0.4 mm pitch, so the
+  CH32V005 board is costed with ENIG, which adds about 0.08 per board at
+  JLCPCB ([QUOTES.md](QUOTES.md)).
+- The panel follows JLCPCB's published rules as far as they could be read.
+  JLCPCB's and NextPCB's quote pages accepted the gerbers, but JLCPCB's
+  placement preview, which needs a sign-in, has not been seen and nobody at
+  JLCPCB has reviewed the panel.
+- JLCPCB's assembly price is calculated from its published fees, not quoted.
+  Its fee list charges X-ray inspection per QFN, about 79 for 240 CH32V005
+  boards; the signed-in quote will show whether that applies.
 - On the CH32V005 board the SDA line leaves J1 under the connector housing.
   The stock footprint has no copper there, but the fit under the clone part
   has not been checked on a real board.
