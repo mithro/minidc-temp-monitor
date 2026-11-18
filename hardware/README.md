@@ -18,7 +18,16 @@ There are two versions of the same board, differing only in the microcontroller:
 | Programming | SWIO test pad TP1 | SWIO is the SCL pin, so J1 pin 4 or TP1 |
 | Spare pins | none | PA1, PC6 and reset on test pads |
 
-## Board
+## Schematic and board
+
+| | Schematic | Board, top | Parts list | Placement |
+|---|---|---|---|---|
+| `sensor-ch32v003` | [PDF](sensor-ch32v003/out/schematic.pdf) | [PNG](sensor-ch32v003/out/board-top.png) | [BOM](sensor-ch32v003/out/bom-jlc.csv) | [CPL](sensor-ch32v003/out/cpl-jlc.csv) |
+| `sensor-ch32v005` | [PDF](sensor-ch32v005/out/schematic.pdf) | [PNG](sensor-ch32v005/out/board-top.png) | [BOM](sensor-ch32v005/out/bom-jlc.csv) | [CPL](sensor-ch32v005/out/cpl-jlc.csv) |
+
+![sensor-ch32v003, top](sensor-ch32v003/out/board-top.png)
+
+![sensor-ch32v005, top](sensor-ch32v005/out/board-top.png)
 
 - 42 x 13 mm, two layers, parts on the top only, flat back.
 - J1 (UP) and J2 (DN): JST SH 1.0 mm 4-pin, pin 1 GND, 2 VDD, 3 SDA, 4 SCL.
@@ -26,6 +35,30 @@ There are two versions of the same board, differing only in the microcontroller:
   for an adhesive pad or a glued magnet.
 - The thermistor sits on a finger cut free of the board on three sides, with no
   copper pour, so it follows the air rather than the board.
+
+## Parts and cost
+
+Both boards share every part except the microcontroller. Prices are JLCPCB
+catalogue prices on 18 Nov 2026 for 200 boards; [COST.md](COST.md) has the full calculation,
+including estimated fabrication and assembly fees.
+
+| Ref | Part | LCSC | Fitted |
+|---|---|---|---|
+| U1 | CH32V003J4M6 or CH32V005D6U6 | C5346354 or C49006243 | yes |
+| RT1 | 100k NTC, B3950, 1%, 0402 (Sunlord SDNT1005X104F3950FTF) | C6807762 | yes |
+| R1 | 100k 1% 0402, divider | C25741 | yes |
+| R2 | 1k 0402, LED | C11702 | yes |
+| R3, R4 | 0R 0402, shared-bus links | C17168 | no |
+| R5, R6 | 4k7 0402, downstream pull-ups | C25900 | yes |
+| C1, C3 | 100n 16 V X7R 0402 | C1525 | yes |
+| C2 | 1u 25 V X5R 0402 | C52923 | yes |
+| D1 | Red LED 0603 | C2286 | yes |
+| J1, J2 | JST SH 4-pin, side entry, compatible clone | C7430446 | yes |
+
+| | `sensor-ch32v003` | `sensor-ch32v005` |
+|---|---|---|
+| Parts per board | $0.33 | $0.30 |
+| 200 boards assembled (estimate) | $118 | $113 |
 
 ## Supply voltage
 
@@ -69,7 +102,7 @@ straight through to the next board, so one chain runs at one voltage.
 
 | Mode | R3, R4 (0R) | R5, R6 (4k7) | Behaviour |
 |---|---|---|---|
-| Relay (default) | not fitted | fitted | Each board is an I2C target upstream and a bit-banged controller downstream, and forwards traffic. Every hop is a fresh, short bus, so no separate redriver board is needed. |
+| Relay (default) | not fitted | fitted | Each board is an I2C target upstream and a bit-banged controller downstream, and forwards traffic. Every hop is a fresh, short bus. |
 | Shared bus | fitted | not fitted | SDA/SCL pass straight through. All boards share one bus. |
 
 The BOM and placement files are for the relay fitting. R5 and R6 are the pull-ups
@@ -89,7 +122,10 @@ than editing the KiCad files by hand (hand edits are lost on the next build).
   does not collide) and the `sym-lib-table` in each project directory.
 - `scripts/gen_pcb.py` places the parts, routes the board and pours ground.
 - `scripts/route.py` is the small grid router `gen_pcb.py` uses.
-- `build.sh` runs both for both versions, then ERC, DRC and the exports.
+- `scripts/cost.py` prices both boards from their parts lists and writes
+  [COST.md](COST.md).
+- `build.sh` runs the schematic and board scripts for both versions, then
+  ERC, DRC, the exports and `cost.py`.
 - `sensor-*/out/` holds the schematic PDF, board renders, the BOM and placement
   files in JLCPCB column layout, and the ERC and DRC reports. Gerbers are written
   to `out/gerbers/` by the build and are not committed.

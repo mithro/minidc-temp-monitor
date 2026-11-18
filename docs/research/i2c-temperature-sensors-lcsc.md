@@ -2,18 +2,17 @@
 
 Nov 16, 2026 · Tim 'mithro' Ansell
 
-> Exported from the [original Claude Doc](https://claude.ai/artifact/1k6nM7PYELgqpNiCysNJx9) on 2026-11-16. Prices, stock and recommendations are a snapshot from that date.
+> Exported from the [original Claude Doc](https://claude.ai/artifact/1k6nM7PYELgqpNiCysNJx9) on 2026-11-16. Prices and stock are a snapshot from that date.
 
-## Summary and top picks
+## Summary and picks
 
-The best bulk part is a TMP175-class sensor: 27 addresses on one bus, ±0.5 °C, about $0.38 each at 100. No I2C temperature sensor on JLCPCB is a Basic part, so every option costs an Extended-part fee. That makes it worth using **one sensor part number** for all points and one humidity part, which keeps the fee to two parts per order.
+A snapshot of the I2C temperature and humidity sensors in stock at JLCPCB / LCSC. The sensor strip boards in [hardware/](../../hardware/README.md) do not use any of these parts: they read a thermistor with a microcontroller. This survey is the reference for humidity and calibration sensors, which are not designed in yet, and for anyone who wants a ready-made I2C sensor instead.
+
+No I2C temperature sensor on JLCPCB is a Basic part, so every option costs an Extended-part fee.
 
 | Role | Pick | Why | $ @100 |
 | --- | --- | --- | --- |
-| Bulk temperature points | TMP175AIDR(UMW) C5158046, second source NST175H-QSPR C917444 | 27 per bus, ±0.5 °C, about 9k in stock (10k+ for the MSOP variant C5158047). Two buses give 54 points for about $21 of sensors | 0.38 to 0.42 |
-| Bulk, genuine TI only | TMP75AIDR C30389 | Cheapest genuine TI part, ±0.5 °C, 8 per bus (64 behind one PCA9548A mux) | 0.23 |
-| Small flex or cable strips | TMP102AIDRLR C99269 | SOT-563, 36k stock, ±0.5 °C, 4 per bus | 0.26 |
-| Calibration reference | TMP117AIDRVR C699536 | ±0.1 °C, one or two per aisle to check the cheap parts against | 0.73 |
+| Calibration reference | TMP117AIDRVR C699536 | ±0.1 °C, one or two per aisle to check the thermistor boards against | 0.73 |
 | Humidity (cold aisle, inlet) | SHT40-CD1B-R3 C7461852, or SHT30-DIS-B2.5KS C77361 for 2 addresses | Genuine Sensirion, ±0.2 °C and about ±2 %RH | 1.34 to 1.99 |
 | Cheapest humidity | AHT20 C2757850 | $0.53 and 33k stock, but fixed address, so one per mux channel | 0.53 |
 
@@ -89,7 +88,7 @@ Ways past the limit, cheapest first:
 
 1. **Several buses from one MCU.** An RP2040 has 2 hardware I2C plus PIO; one bus per aisle side doubles capacity for free.
 2. **An I2C mux** (TCA9548A / PCA9548A class, 8 channels). With 27-address parts that is 216 sensors behind one host address, and it also isolates bus capacitance per strip.
-3. **A tiny MCU per sensor strip** (a CH32V003 is around $0.10) that reads its local sensors and reports over RS-485 or CAN. This is the robust answer when strips are more than about 1 m from the host, because plain I2C is a short-wire, low-capacitance bus (400 pF max).
+3. **A small MCU per sensor point** that reads a local sensor and passes data along. This is what the sensor strip boards do: a CH32V003 or CH32V005 reads a thermistor and relays I2C to the next board, so each cable is a short bus of its own.
 4. **Remote-diode chips.** A TMP421-class or TMP468-class part reads cheap MMBT3904 transistors on short twisted pair, so one I2C chip covers several points. Useful for dense points along a rack face; cable length and noise need care.
 
 Humidity matters mainly on the cold aisle (condensation and dew-point risk) and at the inlet. A sensible split is temperature-only parts for most points and a few humidity parts per aisle.
@@ -98,8 +97,8 @@ Humidity matters mainly on the cold aisle (condensation and dew-point risk) and 
 
 - **JLC class.** All parts found are Extended. JLC charges a loading fee per unique Extended part per order (about $3 when I last knew it; check the current fee). A query for Basic temperature sensors returned nothing.
 - **NextPCB not checked.** nextpcb.com was not reachable from here, so its prices and its own parts library are not in this report. LCSC and JLC share stock, so the JLC numbers stand for LCSC too.
-- **Clones.** UMW, TUDI, GXCAS and Novosense parts are cheap and well stocked on LCSC, but their specs above come from the listing, not a datasheet I read. Buy a few and check them against a TMP117 before a full build.
-- **Not found or not checked.** The search found no in-stock match for TMP116, TMP114, HDC1080, STS30/STS40, SHTC3, Sensylink CT1075 and CHT831x, Novosense NST112 and NSHT30, and MySentech M117; some may still be on LCSC under a different part number. I did not get to TMP119, TMP100, TMP108, TMP468, STTS751, ADT7410/7420, NCT75, AT30TS75, MCP980x, AHT30 and HTU21D because of a fetch rate limit. I can run those next if any matter.
+- **Clones.** UMW, TUDI, GXCAS and Novosense parts are cheap and well stocked on LCSC, but their specs above come from the listing, not a datasheet I read. Check a few against a TMP117 before relying on them.
+- **Not found or not checked.** The search found no in-stock match for TMP116, TMP114, HDC1080, STS30/STS40, SHTC3, Sensylink CT1075 and CHT831x, Novosense NST112 and NSHT30, and MySentech M117; some may still be on LCSC under a different part number. I did not get to TMP119, TMP100, TMP108, TMP468, STTS751, ADT7410/7420, NCT75, AT30TS75, MCP980x, AHT30 and HTU21D because of a fetch rate limit.
 - **Volatility.** Stock and price move daily, especially for clones with a few thousand units.
 
 Source: JLC/LCSC catalog data via [jlcsearch](https://jlcsearch.tscircuit.com/components/list.json?search=TMP175), fetched 16 Nov 2026.

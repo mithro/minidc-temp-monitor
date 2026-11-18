@@ -2,6 +2,7 @@
 # Regenerate both sensor boards from the scripts and export the review and
 # ordering files.  Needs KiCad 9 (kicad-cli and the pcbnew Python module).
 #   ./build.sh           regenerate schematics, boards and exports
+# Both forms finish by rewriting COST.md with scripts/cost.py.
 #   ./build.sh export    only redo the exports from the files as they are
 set -e
 cd "$(dirname "$0")"
@@ -26,3 +27,4 @@ for v in ch32v003 ch32v005; do
     kicad-cli pcb export gerbers --layers F.Cu,B.Cu,F.Mask,B.Mask,F.Paste,F.SilkS,B.SilkS,Edge.Cuts -o $out/gerbers/ $p.kicad_pcb
     kicad-cli pcb export drill --excellon-separate-th -o $out/gerbers/ $p.kicad_pcb
 done
+python3 scripts/cost.py > /dev/null
