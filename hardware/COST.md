@@ -67,5 +67,5 @@ comparison with NextPCB.
 | Assembly setup and stencil | 9.71 |
 | Extended part fee, 3 types | 9.21 |
 | Placement, 43 joints per board | 16.51 |
-| X-ray inspection, 240 QFN parts at 0.33 | 79.20 |
+| X-ray inspection, 240 leadless parts at 0.33 | 79.20 |
 | **Total** | **233.30** |

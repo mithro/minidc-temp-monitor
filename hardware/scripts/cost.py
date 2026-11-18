@@ -27,14 +27,13 @@ PRICES = {
     'C23162': ('4k7 1% 0603', 'Basic', [(1, .0028), (1000, .0022), (5000, .0019)]),
 }
 
-# The quoted order: 15 panels of 16 boards. Both JLCPCB and NextPCB price that
-# quantity (NextPCB takes panels in multiples of 5), so the two can be compared.
+# The quoted order: 15 panels of 16 boards.
 PANELS, PER_PANEL = 15, 16
 
 # Bare panels: JLCPCB online quote for out/panel/gerbers.zip on 18 Nov 2026,
-# 15 panels, "Panel by Customer", 1.6 mm, green, 2 day build. The price was
-# the same for both boards. See QUOTES.md.
-PCB_QUOTE = {'HASL(with lead)': 24.40, 'LeadFree HASL': 26.50, 'ENIG': 45.90}
+# 15 panels, "Panel by Customer", 1.6 mm, green. The price was the same for
+# both boards. See QUOTES.md.
+PCB_QUOTE = {'LeadFree HASL': 26.50, 'ENIG': 45.90}
 FINISH = {'sensor-ch32v003': 'LeadFree HASL', 'sensor-ch32v005': 'ENIG'}
 
 # Assembly: JLCPCB's published Economic PCBA fees ("PCB Assembly Cost: What
@@ -84,7 +83,7 @@ def board(name, boards):
     xray = sum(len(refs) for r, refs in bom if r['Comment'] in XRAY_PARTS) * boards
     if xray:
         each = [p for q, p in XRAY_EACH if xray >= q][-1]
-        fees.append((f'X-ray inspection, {xray} QFN parts at {each}', xray * each))
+        fees.append((f'X-ray inspection, {xray} leadless parts at {each}', xray * each))
     return rows, parts, fees
 
 

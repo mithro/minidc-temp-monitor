@@ -5,9 +5,8 @@ gerbers (`sensor-*/out/panel/gerbers.zip`) to each company's online quote
 page. Nothing was ordered and no account was used. All prices are in USD and
 leave out shipping, tax and import duty.
 
-The quantity is 15 panels of 16 boards, 240 boards of each version. NextPCB
-takes panels in multiples of 5, so 15 is the smallest order over 200 boards
-that both companies price.
+The quantity is 15 panels of 16 boards, 240 boards of each version. The build
+needs at least 200 boards and NextPCB takes panels in multiples of 5.
 
 ## Result
 
@@ -17,10 +16,17 @@ that both companies price.
 | `sensor-ch32v005`, ENIG | 233.30 (0.97 per board) | 651.24 (2.71 per board) | 2.8 x |
 | `sensor-ch32v005`, lead-free HASL | 213.90 (0.89 per board) | 525.73 (2.19 per board) | 2.5 x |
 
-JLCPCB is the cheaper place to build both boards. The NextPCB figures are a
-complete online quote. The JLCPCB figures are a real quote for the bare panels
-plus assembly calculated from JLCPCB's published fees, because JLCPCB asks for
-a sign-in before it prices assembly (see [What is and is not a quote](#what-is-and-is-not-a-quote)).
+On these figures JLCPCB is the cheaper place to build both boards. The two
+columns are not the same kind of number. The NextPCB figures are its online
+price for the uploaded gerbers, placement file and parts list. The JLCPCB
+figures are its online price for the bare panels plus assembly calculated
+from its published fees, because JLCPCB asks for a sign-in before it prices
+assembly (see [What is and is not a quote](#what-is-and-is-not-a-quote)).
+
+The CH32V005 rows are also not like for like: the JLCPCB figure includes
+79.20 of X-ray inspection from its fee list, and no X-ray was requested from
+NextPCB. Without X-ray the JLCPCB CH32V005 board is 154.10 with ENIG and
+134.70 with lead-free HASL.
 
 | For 240 boards | JLCPCB V003 | JLCPCB V005 | NextPCB V003 | NextPCB V005 |
 |---|---|---|---|---|
@@ -28,9 +34,13 @@ a sign-in before it prices assembly (see [What is and is not a quote](#what-is-a
 | Bare panels | 26.50 | 45.90 | 49.30 | 174.81 |
 | Parts | 79.85 | 72.77 | 75.15 | 72.08 |
 | Assembly | 33.51 | 35.43 | 404.35 | 404.35 |
-| X-ray inspection of the QFN | none | 79.20 | none | not charged |
+| X-ray inspection of the QFN | none | 79.20 | none | not requested |
 | **Total** | **139.86** | **233.30** | **528.80** | **651.24** |
-| Build time quoted | panels 2 days | panels 3 days | 8 to 12 working days | 11 to 16 working days |
+
+JLCPCB showed a build time of 2 days for the bare panels with HASL and 3 days
+with ENIG; its assembly time is shown after the sign-in. NextPCB showed 8 to
+12 working days for the whole CH32V003 order and 11 to 16 for the CH32V005
+order, both with lead-free HASL.
 
 [COST.md](COST.md) has the JLCPCB figures line by line.
 
@@ -38,19 +48,19 @@ a sign-in before it prices assembly (see [What is and is not a quote](#what-is-a
 
 Page: `cart.jlcpcb.com/quote`. Settings: FR-4, 2 layers, 107 x 132 mm, "Panel
 by Customer" with 2 columns and 8 rows, 1.6 mm, green, 1 oz, tented vias,
-0.3 mm minimum hole, 2 day build.
+0.3 mm minimum hole, standard build time.
 
-Bare panel price, the same for both boards:
+Bare panel price for 15 panels, the same for both boards:
 
-| Panels | Boards | HASL (with lead) | Lead-free HASL | ENIG (1 U") |
-|---|---|---|---|---|
-| 5 | 80 | 10.80 | 12.20 | 29.00 |
-| 13 | 208 | 21.70 | 23.60 | 42.50 |
-| 15 | 240 | 24.40 | 26.50 | 45.90 |
+| | HASL (with lead) | Lead-free HASL | ENIG (1 U") |
+|---|---|---|---|
+| Engineering fee | 4.00 | 4.00 | 4.00 |
+| Boards | 20.40 | 20.40 | 20.40 |
+| Finish | none | 2.10 | 21.50 |
+| **Total** | **24.40** | **26.50** | **45.90** |
 
-Each price is a 4.00 engineering fee plus the board charge plus the finish
-charge. The 13 panel row came from the page's price service, and was not
-checked against the quantity list the page offers.
+The page was driven to the panel settings, and the price for 15 panels was
+then read from the page's own price service.
 
 Assembly is priced from JLCPCB's published Economic PCBA fees (help article
 "PCB Assembly Cost: What Does the Price Include?", updated 22 Oct 2026) and
@@ -67,8 +77,9 @@ the catalogue price of each part at the order quantity:
 The X-ray fee is the largest single line on the CH32V005 board. JLCPCB's
 article says it is required for "BGA, QFN, and other leadless packages" and
 charges it per part. Whether JLCPCB applies it to this 12-pin QFN is only
-shown in the signed-in quote. If it does, the CH32V005 board costs 0.39 more
-per board than the CH32V003 board even though its microcontroller is cheaper.
+shown in the signed-in quote. It is 0.33 per board. With it and ENIG the
+CH32V005 board costs 0.39 more per board than the CH32V003 board; without it,
+0.06 more.
 
 All ten parts were in stock at JLCPCB on the day: 32,792 of the CH32V003J4M6
 and 11,691 of the CH32V005D6U6.
@@ -84,8 +95,12 @@ spreadsheet.
 
 Settings: FR-4, 2 layers, 107 x 132 mm, "Panel by Customer" 2 x 8, 15 panels
 (240 boards), TG130, 1.6 mm, green, 1 oz, tented vias, single-sided assembly,
-depanelization on (the page's default; turning it off did not change the
-price).
+depanelization on (the page's default; the price was the same with it off),
+no X-ray inspection.
+
+The lead-free HASL quote was read from the page. The other two finishes were
+priced by sending the same request to the page's price service with only the
+finish changed; parts and assembly came back unchanged.
 
 | For 240 boards | V003 | V005 |
 |---|---|---|
@@ -156,10 +171,10 @@ reached.
 
 | Figure | Source |
 |---|---|
-| JLCPCB bare panels | Online quote for the uploaded gerbers |
+| JLCPCB bare panels | Online price for the uploaded gerbers |
 | JLCPCB parts | Catalogue prices and stock on 18 Nov 2026 |
 | JLCPCB assembly and X-ray | Calculated from published fees. The page sends you to a sign-in before the parts list and placement file can be uploaded |
-| NextPCB panels, parts and assembly | Online quote for the uploaded gerbers, placement file and parts list |
+| NextPCB panels, parts and assembly | Online price for the uploaded gerbers, placement file and parts list, without X-ray inspection. Not reviewed by NextPCB's engineers |
 | NextPCB Rev 0 PCBA | Not quoted: needs a sign-in and does not fit this order |
 
 To turn the JLCPCB figures into a full quote, sign in at `cart.jlcpcb.com/quote`,

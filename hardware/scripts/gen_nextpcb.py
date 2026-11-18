@@ -7,9 +7,13 @@ only as a spreadsheet. For each board this writes, in sensor-*/out/nextpcb/:
   bom.xlsx       one board's parts, in NextPCB's template columns
   centroid.xlsx  the panel placement file (out/panel/cpl-jlc.csv) as a sheet
 The panel gerbers are uploaded as they are (out/panel/gerbers.zip).
+The files hold no timestamps, so a rebuild gives the same bytes.
 Needs openpyxl.
 """
 import csv
+import io
+import zipfile
+from datetime import datetime
 from pathlib import Path
 
 import openpyxl
@@ -31,6 +35,18 @@ MPN = {
 }
 
 
+def save(wb, path):
+    """Save without the creation time openpyxl would put in the file."""
+    wb.properties.created = wb.properties.modified = datetime(2000, 1, 1)
+    buf = io.BytesIO()
+    wb.save(buf)
+    with zipfile.ZipFile(buf) as src, zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED) as dst:
+        for item in src.infolist():
+            fixed = zipfile.ZipInfo(item.filename, (1980, 1, 1, 0, 0, 0))
+            fixed.compress_type = zipfile.ZIP_DEFLATED
+            dst.writestr(fixed, src.read(item))
+
+
 def write(name):
     out = HERE / name / 'out'
     (out / 'nextpcb').mkdir(exist_ok=True)
@@ -46,7 +62,7 @@ def write(name):
                'Procurement Type', 'Customer Note'])
     for n, (lcsc, (refs, comment)) in enumerate(parts.items(), 1):
         ws.append([n, ','.join(refs), len(refs), MPN[lcsc], '', comment])
-    wb.save(out / 'nextpcb' / 'bom.xlsx')
+    save(wb, out / 'nextpcb' / 'bom.xlsx')
 
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -55,7 +71,7 @@ def write(name):
         ws.append(next(rows))
         for r in rows:
             ws.append(r[:3] + [float(x) for x in r[3:6]] + r[6:])
-    wb.save(out / 'nextpcb' / 'centroid.xlsx')
+    save(wb, out / 'nextpcb' / 'centroid.xlsx')
 
 
 if __name__ == '__main__':
