@@ -1,4 +1,4 @@
-# Hardware: temperature sensor strip, v0.1
+# Hardware: temperature sensor strip, v0.2
 
 A small pass-through board for a chain of temperature sensors on a Qwiic style
 (JST SH 4-pin) I2C cable. Each board carries a WCH RISC-V microcontroller that
@@ -12,29 +12,84 @@ There are two versions of the same board, differing only in the microcontroller:
 | MCU | CH32V003J4M6, SOP-8 (LCSC C5346354) | CH32V005D6U6, QFN-12 2x2 mm (LCSC C49006243) |
 | ADC | 10 bit | 12 bit |
 | Upstream I2C (to J1) | hardware I2C on PC1/PC2 | hardware I2C on PD0/PD1 (remap 1) |
-| Downstream I2C (to J2) | bit-banged on PA1/PC4 | bit-banged on PC0/PC3 |
-| Thermistor divider | fed from VDD, read on PA2 | fed from PC7 while sampling, read on PC4 |
+| Downstream I2C (to J2) | bit-banged on PC4 (SDA) and PA2 (SCL) | bit-banged on PC0/PC3 |
+| Thermistor divider | fed from VDD, read on PA1 (pin 1, shared with PD6) | fed from PC6 while sampling, read on PC4 |
 | Identify LED | shares the SWIO pin (PD1/PD4/PD5) | PA2 |
 | Programming | SWIO test pad TP1 | SWIO is the SCL pin, so J1 pin 4 or TP1 |
-| Spare pins | none | PA1, PC6 and reset on test pads |
+| Spare pins | none | PA1, PC7 and reset on 1 mm pads (A1, C7, RST) |
 
 ## Schematic and board
 
-| | Schematic | Board, top | Parts list | Placement |
-|---|---|---|---|---|
-| `sensor-ch32v003` | [PDF](sensor-ch32v003/out/schematic.pdf) | [PNG](sensor-ch32v003/out/board-top.png) | [BOM](sensor-ch32v003/out/bom-jlc.csv) | [CPL](sensor-ch32v003/out/cpl-jlc.csv) |
-| `sensor-ch32v005` | [PDF](sensor-ch32v005/out/schematic.pdf) | [PNG](sensor-ch32v005/out/board-top.png) | [BOM](sensor-ch32v005/out/bom-jlc.csv) | [CPL](sensor-ch32v005/out/cpl-jlc.csv) |
+| | Schematic | Board | Parts list | Placement | Checks |
+|---|---|---|---|---|---|
+| `sensor-ch32v003` | [PDF](sensor-ch32v003/out/schematic.pdf) | [3D views](sensor-ch32v003/out/board-3d.png), [gerbers](sensor-ch32v003/out/gerbers/) | [BOM](sensor-ch32v003/out/bom-jlc.csv) | [CPL](sensor-ch32v003/out/cpl-jlc.csv) | [ERC](sensor-ch32v003/out/erc.rpt), [DRC](sensor-ch32v003/out/drc.rpt) |
+| `sensor-ch32v005` | [PDF](sensor-ch32v005/out/schematic.pdf) | [3D views](sensor-ch32v005/out/board-3d.png), [gerbers](sensor-ch32v005/out/gerbers/) | [BOM](sensor-ch32v005/out/bom-jlc.csv) | [CPL](sensor-ch32v005/out/cpl-jlc.csv) | [ERC](sensor-ch32v005/out/erc.rpt), [DRC](sensor-ch32v005/out/drc.rpt) |
 
-![sensor-ch32v003, top](sensor-ch32v003/out/board-top.png)
+The renders below are made by `scripts/render.py` from the board files. The
+dimensions on them are read from the board, not typed in.
 
-![sensor-ch32v005, top](sensor-ch32v005/out/board-top.png)
+![sensor-ch32v003: 3D view, then top, bottom and side views with dimensions](sensor-ch32v003/out/board-3d.png)
 
-- 42 x 13 mm, two layers, parts on the top only, flat back.
-- J1 (UP) and J2 (DN): JST SH 1.0 mm 4-pin, pin 1 GND, 2 VDD, 3 SDA, 4 SCL.
-- Mounting: one M3 hole, a zip-tie notch in each long edge, and a part-free back
-  for an adhesive pad or a glued magnet.
-- The thermistor sits on a finger cut free of the board on three sides, with no
-  copper pour, so it follows the air rather than the board.
+![sensor-ch32v005: 3D view, then top, bottom and side views with dimensions](sensor-ch32v005/out/board-3d.png)
+
+| | |
+|---|---|
+| Outline | 42.0 x 13.0 mm, 1.6 mm thick, two layers, 4.6 mm tall over the connectors |
+| Parts | top side only; the back is flat for an adhesive pad or a glued magnet |
+| J1 (UP), J2 (DN) | JST SH 1.0 mm 4-pin, side entry, facing out of the short edges. Pin 1 GND, 2 VDD, 3 SDA, 4 SCL |
+| Mounting hole | 3.2 mm for M3, 11.5 mm from the J1 end, on the centre line, with a 7.2 mm copper-free washer area on both sides |
+| Zip-tie waist | 3.0 mm wide, 1.2 mm deep notch in each long edge, 14 to 17 mm from the J1 end |
+| Thermistor finger | 2.6 mm wide, 8.5 mm long, cut free by a 1.5 mm slot, no copper pour, RT1 near the tip |
+| Test pads | GND, VDD and SWIO: 1.5 mm pads in a column on 2.54 mm pitch, to take a 3-pin pogo clip or header |
+| Back | board name and revision, the two chain fittings, and a white box to write the board's address on |
+
+How the copper is laid out:
+
+- The top layer carries every signal. The back is a ground plane crossed by
+  one track only: a 0.8 mm VDD trunk from J1 to J2. The microcontroller taps
+  the trunk through a via at its decoupling capacitor, so chain current does
+  not pass through the microcontroller's supply pad.
+- Each connector power pin has two vias. Stitching vias tie the top ground
+  pour to the plane.
+- R3 to R6 are 0603 so that each can bridge a track on the top layer. That is
+  what keeps the back plane whole.
+- Copper stays 0.5 mm from every board edge, and 1.0 mm back where the panel
+  tabs attach.
+- Fabrication class: 0.2 mm tracks, 0.6/0.3 mm vias (0.5/0.3 mm under the
+  CH32V005), which is JLCPCB's cheapest two-layer class.
+
+## Panel
+
+JLCPCB assembles small boards as a panel. `scripts/gen_panel.py` builds one for
+each version: 16 boards (2 x 8) in a 100 x 132 mm frame, so 13 panels give 208
+boards.
+
+| | Panel board | Gerbers | Parts list | Placement | Check |
+|---|---|---|---|---|---|
+| `sensor-ch32v003` | [KiCad](sensor-ch32v003/sensor-ch32v003-panel.kicad_pcb) | [zip](sensor-ch32v003/out/panel/gerbers.zip) | [BOM](sensor-ch32v003/out/panel/bom-jlc.csv) | [CPL](sensor-ch32v003/out/panel/cpl-jlc.csv) | [DRC](sensor-ch32v003/out/panel/drc.rpt) |
+| `sensor-ch32v005` | [KiCad](sensor-ch32v005/sensor-ch32v005-panel.kicad_pcb) | [zip](sensor-ch32v005/out/panel/gerbers.zip) | [BOM](sensor-ch32v005/out/panel/bom-jlc.csv) | [CPL](sensor-ch32v005/out/panel/cpl-jlc.csv) | [DRC](sensor-ch32v005/out/panel/drc.rpt) |
+
+![sensor-ch32v003 panel](sensor-ch32v003/out/panel/panel-top.png)
+
+| | |
+|---|---|
+| Frame | 5 mm rails on all four sides |
+| Between boards | 2 mm routed slots |
+| Tabs | four per board, 5 mm wide, on the long edges 7.0 and 37.5 mm from the J1 end. None on the short edges, where the connectors are |
+| Mouse bites | six 0.6 mm holes per tab edge on 1.0 mm pitch, centred 0.25 mm inside the board edge so the stubs break off below the edge |
+| Fiducials | three on the rails, 1 mm copper in a 2 mm mask opening, 3.85 mm from the long panel edge |
+| Tooling holes | four, 1.152 mm, unplated, 2.5 mm from the panel corners |
+| Designators | each part's own designator plus the board number, for example `R5_07` |
+
+To order: upload `gerbers.zip`, choose "Panel by Customer" with 16 boards per
+panel, and give the panel BOM and CPL to the assembly step. The panel is
+separated by mouse bites, not V-cuts, because the outline has notches and a
+slot and the parts sit close to the edges.
+
+The JLCPCB figures used here (rail width, fiducial and tooling hole sizes,
+mouse-bite hole size and spacing) come from JLCPCB's help pages as found on
+18 Nov 2026. Their pages do not agree with each other on every number, so
+check the panel in JLCPCB's order preview before paying.
 
 ## Parts and cost
 
@@ -48,8 +103,8 @@ including estimated fabrication and assembly fees.
 | RT1 | 100k NTC, B3950, 1%, 0402 (Sunlord SDNT1005X104F3950FTF) | C6807762 | yes |
 | R1 | 100k 1% 0402, divider | C25741 | yes |
 | R2 | 1k 0402, LED | C11702 | yes |
-| R3, R4 | 0R 0402, shared-bus links | C17168 | no |
-| R5, R6 | 4k7 0402, downstream pull-ups | C25900 | yes, optional |
+| R3, R4 | 0R 0603, shared-bus links | C21189 | no |
+| R5, R6 | 4k7 1% 0603, downstream pull-ups | C23162 | yes, optional |
 | C1, C3 | 100n 16 V X7R 0402 | C1525 | yes |
 | C2 | 1u 25 V X5R 0402 | C52923 | yes |
 | D1 | Red LED 0603 | C2286 | yes |
@@ -82,7 +137,7 @@ straight through to the next board, so one chain runs at one voltage.
 | Thermistor self-heating at 25 C | about 27 uW | about 63 uW | negligible |
 
 - The thermistor reading is ratiometric. The divider and the ADC reference both
-  hang off VDD (through PC7 on the CH32V005), so the reading does not depend on
+  hang off VDD (through PC6 on the CH32V005), so the reading does not depend on
   the supply voltage. Firmware must work from the ADC ratio and never assume a
   VDD value.
 - Never put more than 5.5 V on VDD. That is both the operating and the absolute
@@ -132,17 +187,24 @@ than editing the KiCad files by hand (hand edits are lost on the next build).
 - `scripts/gen_sch.py` draws the schematic and checks it against its pin table.
   It also writes `lib/minidc.kicad_sym` (the MCU symbols, adjusted so pin text
   does not collide) and the `sym-lib-table` in each project directory.
-- `scripts/gen_pcb.py` places the parts, routes the board and pours ground.
-- `scripts/route.py` is the small grid router `gen_pcb.py` uses.
+- `scripts/layout.py` is the board layout itself: where every part, track,
+  via and label goes, in millimetres from the board's top left corner.
+- `scripts/gen_pcb.py` builds the board file from the schematic's netlist and
+  `layout.py`, and pours ground.
+- `scripts/gen_panel.py` builds the assembly panel and its parts list.
+- `scripts/render.py` draws the dimensioned 3D views.
+- `scripts/gen_models.py` writes the two 3D models KiCad's library lacks (the
+  connector and the QFN-12) into `3dmodels/`, which also holds the stock KiCad
+  models the renders use.
 - `scripts/cost.py` prices both boards from their parts lists and writes
   [COST.md](COST.md).
-- `build.sh` runs the schematic and board scripts for both versions, then
-  ERC, DRC, the exports and `cost.py`.
-- `sensor-*/out/` holds the schematic PDF, board renders, the BOM and placement
-  files in JLCPCB column layout, and the ERC and DRC reports. Gerbers are written
-  to `out/gerbers/` by the build and are not committed.
+- `build.sh` runs all of the above for both versions, with ERC and DRC, and
+  stops if either reports anything.
+- `sensor-*/out/` holds the schematic PDF, the 3D views, gerbers, the BOM and
+  placement files in JLCPCB column layout, and the ERC and DRC reports.
+  `sensor-*/out/panel/` holds the same for the panel.
 
-Needs KiCad 9 (`kicad-cli` and the `pcbnew` Python module) and numpy.
+Needs KiCad 9 (`kicad-cli` and the `pcbnew` Python module), Pillow and zip.
 
 ## Notes for firmware
 
@@ -150,10 +212,11 @@ Needs KiCad 9 (`kicad-cli` and the `pcbnew` Python module) and numpy.
   Firmware must wait a moment at boot before turning it off and enabling I2C,
   or the board cannot be reflashed. In shared-bus mode R4 joins every board's
   SWIO, so flash a board on its own.
-- CH32V005: the divider is powered from PC7. Wait about 25 ms after driving PC7
+- CH32V005: the divider is powered from PC6. Wait about 25 ms after driving PC6
   high before sampling, so C3 has settled.
 - CH32V003: the LED sits on the SWIO pin. Light it by driving PD4 or PD5 low and
-  leave PD1 as SWIO. Pin 1 is PD6 and PA1 bonded together, so keep PD6 an input.
+  leave PD1 as SWIO. Pin 1 is PD6 and PA1 bonded together and is the thermistor
+  input: read it as ADC channel 1 (PA1) and keep PD6 an input.
 - R5 and R6 are optional, so in relay mode firmware must work the downstream
   SDA and SCL pins without them: release a line by making the pin an input with
   its pull-up on, and drive it by making the pin an output held low. The
@@ -167,21 +230,21 @@ Needs KiCad 9 (`kicad-cli` and the `pcbnew` Python module) and numpy.
   less and the CH32V005 sample rate at 1 MHz or less, so one firmware covers
   both voltages.
 
-## Known gaps in v0.1
+## Known gaps in v0.2
 
 - No firmware yet. The default fitting depends on relay firmware. Self-addressing,
   the relay mode and the CH32V005 programming window on the shared SCL/SWIO pin
   are untested ideas until there is some.
 - Running without R5 and R6 is untested. Try a few boards with them removed
   before leaving them off a whole build.
-- The routing is machine-made and passes DRC, but has not been tidied by hand.
-- No reference designators on the silkscreen.
 - The placement file rotations have not been checked against JLCPCB's part
   orientations. Check the preview when ordering.
-- No panel drawing yet.
+- The panel follows JLCPCB's published rules as far as they could be read, but
+  JLCPCB has not reviewed it.
+- On the CH32V005 board the SDA line leaves J1 under the connector housing.
+  The stock footprint has no copper there, but the fit under the clone part
+  has not been checked on a real board.
 - The JST SH connector part is a compatible clone (LCSC C7430446). Its drawing
   shows the leads and mounting tabs landing on the JST footprint used here (see the
   [connector survey](../docs/research/jst-sh-4pin-connectors.md#land-pattern-of-the-fitted-part)),
   but no part has been soldered to the footprint or mated with a cable yet.
-- With a metal M3 screw or standoff, only solder mask separates it from the
-  ground pour around the hole.

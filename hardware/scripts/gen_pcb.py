@@ -8,7 +8,7 @@ stock KiCad footprints, and places parts, tracks, vias and silkscreen exactly as
 layout.py says.  Nothing is auto-routed: the only computed copper is the ground
 pour.  build.sh runs DRC afterwards, which is what proves every net is joined.
 """
-import math, os, subprocess, sys, tempfile
+import json, math, os, subprocess, sys, tempfile
 import pcbnew
 from pcbnew import FromMM, VECTOR2I
 from sexp import loads, find, first
@@ -214,6 +214,8 @@ def build(variant, pdir):
     rule_area(board, [(hx + hr * math.cos(math.radians(a)), hy + hr * math.sin(math.radians(a)))
                       for a in range(0, 360, 10)], pour_only=False)
     rule_area(board, L.FINGER, pour_only=True)
+    for pts in L.TAB_KEEPOUTS:
+        rule_area(board, pts, pour_only=True)
 
     for n, layer, width, pts in lay['tracks']:
         pts = [pt(p) for p in pts]
@@ -253,6 +255,15 @@ def build(variant, pdir):
         board.Add(z)
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
     pcbnew.SaveBoard(pcb, board)
+    if lay.get('paste_windows'):
+        # A windowed paste layer makes the footprint differ from its library copy on purpose.
+        pro = pcb[:-len('kicad_pcb')] + 'kicad_pro'
+        with open(pro) as f:
+            settings = json.load(f)
+        settings['board']['design_settings']['rule_severities']['lib_footprint_mismatch'] = 'ignore'
+        with open(pro, 'w') as f:
+            json.dump(settings, f, indent=2)
+            f.write('\n')
     return pcb
 
 

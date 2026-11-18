@@ -6,6 +6,6 @@
 "Qwiic DOWN","J2","Connector_JST:JST_SH_SM04B-SRSS-TB_1x04-1MP_P1.00mm_Horizontal","C7430446","1"
 "100k 1%","R1","Resistor_SMD:R_0402_1005Metric","C25741","1"
 "1k","R2","Resistor_SMD:R_0402_1005Metric","C11702","1"
-"4k7","R5,R6","Resistor_SMD:R_0402_1005Metric","C25900","2"
+"4k7","R5,R6","Resistor_SMD:R_0603_1608Metric","C23162","2"
 "100k B3950 1%","RT1","Resistor_SMD:R_0402_1005Metric","C6807762","1"
 "CH32V005D6U6","U1","Package_DFN_QFN:UQFN-12-1EP_2x2mm_P0.4mm_EP1.1x1.1mm","C49006243","1"

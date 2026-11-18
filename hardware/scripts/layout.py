@@ -31,6 +31,13 @@ HOLE_KEEPOUT = (*HOLE, 3.6)     # 7 mm washer plus margin: no copper at all on e
 FINGER = [(25.0, -0.5), (33.4, -0.5), (33.4, 2.9), (25.0, 2.9)]   # no pour around the thermistor
 POUR = [(0, 0), (LEN, 0), (LEN, W), (0, W)]
 
+# Panel tabs: each board hangs from four break-off tabs, two on each long edge at these x positions.
+# The pour stays TAB_CLEAR back from the edge there, so the mouse-bite holes never touch copper.
+TABS, TAB_WIDTH, TAB_CLEAR = (7.0, 37.5), 5.0, 1.0
+TAB_KEEPOUTS = [[(x - TAB_WIDTH / 2 - 0.5, y0), (x + TAB_WIDTH / 2 + 0.5, y0),
+                 (x + TAB_WIDTH / 2 + 0.5, y0 + TAB_CLEAR + 0.5), (x - TAB_WIDTH / 2 - 0.5, y0 + TAB_CLEAR + 0.5)]
+                for x in TABS for y0 in (-0.5, W - TAB_CLEAR)]
+
 SIG, PWR, TRUNK = 0.2, 0.3, 0.8
 
 # Upstream I2C pair: from J1 under the mounting hole, side by side, to x = 18.
@@ -108,7 +115,7 @@ LAYOUT['ch32v003'] = dict(
     labels={'J1': (0, 4.4, 0, 'J1 UP'), 'J2': (0, -4.3, 0, 'J2 DN'), 'U1': (0, 3.5),
             'D1': (0.6, 1.45), 'R2': (0.3, 1.25), 'R3': (0, 1.9), 'R4': (0, 1.9), 'R5': (0.1, 2.9), 'R6': (0.2, 1.9),
             'RT1': (1.7, 0), 'TP1': (-3.0, 0, 0, 'SWIO'), 'TP2': (-2.8, 0, 0, 'VDD'), 'TP3': (-2.8, 0, 0, 'GND')},
-    silk=[('minidc-temp v0.2', 7.0, 1.3, 'F', 0.8, 0), ('CH32V003', 9.0, 12.1, 'F', 0.8, 0),
+    silk=[('minidc-temp v0.2', 7.0, 1.3, 'F', 0.8, 0), ('CH32V003', 8.6, 11.9, 'F', 0.8, 0),
           ('CH32V003', 21.0, 6.0, 'B', 1.0, 0)] + BACK_SILK,
     boxes=BACK_BOXES,
 )
@@ -175,14 +182,14 @@ LAYOUT['ch32v005'] = dict(
                    ('GND', 24.12, 10.45), ('GND', 22.05, 4.87), ('GND', 18.8, 4.87), ('GND', 30.1, 6.75), ('GND', 34.3, 1.5)],
     paste_windows={'U1': ([], [(-0.3, -0.3, 0.35), (0.3, 0.3, 0.35)])},
     stitch=[(2.0, 6.5), (3.5, 2.5), (1.5, 11.9), (8.5, 2.4), (13.0, 2.2), (15.5, 4.9), (15.5, 7.4), (12.0, 12.1),
-            (30.3, 12.2), (35.5, 12.0), (36.3, 10.2), (40.8, 11.4), (37.5, 3.2), (40.6, 1.6),
+            (30.3, 12.2), (36.3, 10.2), (40.8, 11.4), (37.5, 3.2), (40.6, 1.6),
             (31.5, 6.2)],
     labels={'J1': (0, 4.4, 0, 'J1 UP'), 'J2': (0, -4.3, 0, 'J2 DN'),
             'U1': (0, -2.3), 'C1': (-0.45, 1.45), 'C2': (0.1, -0.97), 'D1': (0.4, 1.4), 'R2': (1.3, 0.9),
             'R1': (3.95, -0.2, 0, 'R1 C3'), 'R3': (0, -1.15), 'R4': (0, 1.2), 'R5': (1.35, 0.45), 'R6': (-1.7, 0.4),
             'TP4': (0, -1.15, 0, 'RST'), 'TP5': (-1.6, 0, 0, 'A1'), 'TP6': (1.6, 0, 0, 'C7'),
             'RT1': (1.7, 0), 'TP1': (-3.0, 0, 0, 'SWIO'), 'TP2': (-2.8, 0, 0, 'VDD'), 'TP3': (-2.8, 0, 0, 'GND')},
-    silk=[('minidc-temp v0.2', 7.0, 1.3, 'F', 0.8, 0), ('CH32V005', 9.0, 12.1, 'F', 0.8, 0),
+    silk=[('minidc-temp v0.2', 7.0, 1.3, 'F', 0.8, 0), ('CH32V005', 8.6, 11.9, 'F', 0.8, 0),
           ('CH32V005', 21.0, 6.0, 'B', 1.0, 0)] + BACK_SILK,
     boxes=BACK_BOXES,
 )
