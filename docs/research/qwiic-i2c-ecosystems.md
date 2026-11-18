@@ -2,7 +2,7 @@
 
 Nov 16, 2026 · Tim 'mithro' Ansell
 
-> Exported from the [original Claude Doc](https://claude.ai/artifact/NNGkVAbaxvyX1meoYzW1v9) on 2026-11-16. Prices, stock and recommendations are a snapshot from that date.
+> Exported from the [original Claude Doc](https://claude.ai/artifact/NNGkVAbaxvyX1meoYzW1v9) on 2026-11-16. Prices and stock are a snapshot from that date.
 
 ## Summary
 
@@ -12,7 +12,7 @@ The de facto standard for plug-and-play I2C sensors is a **4-pin JST SH 1.0 mm c
 - The 2.0 mm systems use two different connector bodies. Grove, M5Stack and STEMMA 4-pin share one pin order (SCL, SDA, V+, GND), but DFRobot Gravity uses the same JST PH plug as STEMMA with its power and I2C pins reversed, which can damage boards if mixed.
 - Plain I2C over Qwiic cables is only good for about a metre. To span an aisle, the ecosystems use a **PCA9615 differential extender over Ethernet cable** (SparkFun QwiicBus), which SparkFun reports working over 200 ft at 100 kHz.
 - Address clashes are solved with address-select jumpers first, and a **TCA9548A 8-way mux** second.
-- Recommendation: one small sensor board with two Qwiic connectors (pass-through), a TMP175-class sensor with 27 addresses, pull-ups off by default, and a PCA9615 + RJ45 link from a per-aisle hub. Details are in the implications section below.
+- The sensor strip boards in [hardware/](../../hardware/README.md) use this connector and pinout, one at each end.
 
 ## Ecosystem comparison
 
@@ -52,7 +52,7 @@ The two 1.0 mm systems made opposite choices, and that choice matters most when 
 - **M5Stack Port A:** 5 V on the power pin with 3.3 V logic, so a sensor board must regulate down and must not pull up to the 5 V pin.
 - **QwiicBus:** terminating 4.7 kΩ pull-ups only on the EndPoint, none on MidPoints, per the [QwiicBus hookup guide](https://learn.sparkfun.com/tutorials/sparkfun-qwiicbus-hookup-guide/hardware-overview).
 
-For our design: 3.3 V on the connector (Qwiic-correct, and STEMMA QT boards accept it), with pull-ups on a solder jumper that is **open by default**, fitted only on the hub or the last board.
+The sensor strip boards carry the supply straight through and work at 3.3 V or 5 V; their pull-ups are per cable hop (see [hardware/](../../hardware/README.md#supply-voltage)).
 
 ## Long cable runs
 
@@ -93,20 +93,17 @@ The same dozen chips recur across every ecosystem, and they overlap heavily with
 | MikroE Click | Thermo Click series (TMP102, LM75, MCP9808, TMP117 and others) | Temp&Hum Click series (SHT, HDC, HTS221) | IR Thermo Click |
 | Digilent Pmod | Pmod TMP2 (ADT7420), Pmod TMP3 (TCN75A) | Pmod HYGRO (HDC1080) | Pmod TC1 (thermocouple, SPI) |
 
-Two patterns matter for us. Bulk single-point temperature boards are rare in these catalogues; they favour precision parts (TMP117, MCP9808) or combo environmental sensors. The one many-per-bus board is Adafruit's PCT2075, the same 27-address LM75/TMP175 family as our survey's top pick.
+Two patterns matter for us. Bulk single-point temperature boards are rare in these catalogues; they favour precision parts (TMP117, MCP9808) or combo environmental sensors. The one many-per-bus board is Adafruit's PCT2075, from the 27-address LM75/TMP175 family.
 
-## Implications for our design
+## What the design uses from this
 
-Adopt the Qwiic connector and pinout on our own boards, and borrow QwiicBus's PCA9615-over-RJ45 approach for the runs between aisles. That keeps every board cheap while letting us plug in any off-the-shelf Qwiic or STEMMA QT sensor for comparison or a reference reading.
+The sensor strip boards in [hardware/](../../hardware/README.md) take the Qwiic connector and pinout: a JST SH 4-pin at each end, wired GND, V+, SDA, SCL. Beyond that they differ from a Qwiic board:
 
-1. **Sensor board.** Two JST SH 4-pin connectors (in/out) wired GND, 3V3, SDA, SCL; a TMP175-class sensor (UMW TMP175 clone, C5158046, from the [survey](i2c-temperature-sensors-lcsc.md)) with its three tri-state address pins on solder pads, giving 27 boards per bus. No regulator or level shifter: 3.3 V only, Qwiic style.
-2. **Pull-ups.** 2.2-4.7 kΩ pull-ups behind a solder jumper that is open by default, so a 27-board chain does not stack 27 pull-ups. Fit them on the hub instead.
-3. **Aisle link.** One PCA9615 board per aisle with RJ45 in/out, compatible with QwiicBus pin use (I2C pairs, 3.3 V on pins 4/5, optional higher voltage on 3/6 for a local buck). Run at 100 kHz for margin over several metres of Cat5e.
-4. **Hub.** An ESP32 or RP2040 controller with a TCA9548A, one channel per aisle or rack face, so the cold and hot sides are separate buses and a fault on one cannot hang the other.
-5. **Humidity and reference points.** SHT40 (fixed address) on its own mux channel per aisle, and one TMP117 as a calibration reference, both of which are available as cheap Qwiic/STEMMA QT boards for prototyping before our own PCBs exist.
-6. **Prototype with off-the-shelf parts.** Adafruit PCT2075 boards plus a SparkFun QwiicBus pair can validate cable length and addressing before we order PCBs.
+- They run from 3.3 V or 5 V, with no regulator or level shifter. A standard Qwiic board is 3.3 V only, so it can share a chain only when the chain runs at 3.3 V.
+- By default each board relays I2C to the next one, so every cable is its own short bus with its own pull-ups, and the 1 m limit of a plain Qwiic chain applies per cable instead of per chain.
+- Boards assign their own addresses, so there are no address jumpers and no mux is needed for address space.
 
-Open questions: total cable length per aisle and number of points per rack face, which decide whether one PCA9615 segment per aisle is enough; and whether 5 V tolerance (STEMMA QT style) is worth the extra BOM cost for M5Stack-style hosts.
+The long-run options above (differential I2C, bus buffers, muxes) remain the reference for the link between a hub and the first board of a chain, which has not been designed.
 
 ## Sources
 

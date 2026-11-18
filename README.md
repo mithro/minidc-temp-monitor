@@ -11,33 +11,25 @@ First hardware revision drawn, not yet built. [hardware/](hardware/README.md)
 holds KiCad 9 files for the sensor strip board (v0.1) in two versions, one
 per microcontroller. Both pass ERC and DRC. There is no firmware yet.
 
-## Current direction (draft, not yet final)
+## Design
 
-- **Sensor board (drawn):** a 42 x 13 mm pass-through strip with a WCH
-  RISC-V microcontroller (CH32V003 or CH32V005) reading a 100 k NTC
-  thermistor, and a Qwiic / STEMMA QT (JST SH 4-pin) connector at each end
-  for daisy-chaining. Boards are meant to assign their own I2C addresses,
-  so there are no address straps.
+- **Sensor board:** a 42 x 13 mm pass-through strip with a WCH RISC-V
+  microcontroller (CH32V003 or CH32V005) reading a 100 k NTC thermistor,
+  and a Qwiic / STEMMA QT style connector (JST SH 4-pin) at each end for
+  daisy-chaining. Boards assign their own I2C addresses, so there are no
+  address straps.
 - **Chain:** by default each board relays the bus to the next one (I2C
   target upstream, bit-banged controller downstream), so every cable is its
-  own short bus and no separate redriver board is needed. A shared
-  pass-through bus is a build option.
-- **Aisle link:** PCA9615 differential I2C over RJ45 / Cat5e, following
-  SparkFun QwiicBus pin use.
-- **Hub:** ESP32 or RP2040 with a TCA9548A mux, separate buses for the
-  hot and cold sides.
-- **Humidity and reference:** SHT40 for humidity on its own mux
-  channel, plus a TMP117 as a calibration reference.
+  own short bus. A shared pass-through bus is a build option.
+- **Supply:** 3.3 V or 5 V, passed straight through the chain.
+- **Cost:** about $0.30 to $0.33 of parts per board, and an estimated $115
+  to $120 for 200 assembled boards. See [hardware/COST.md](hardware/COST.md).
 
-The aisle link, hub and humidity items are still the research-phase draft
-and have not been revisited since the sensor board changed to a
-microcontroller.
+Not designed yet: the hub that powers and reads the chains, the link from
+the hub to the first board of each chain, humidity sensing, and the
+firmware (self-addressing and the relay).
 
-The sensor boards run from 3.3 V or 5 V, so the chain voltage is a hub
-choice (see [hardware/](hardware/README.md#supply-voltage)).
-
-Open questions: cable length per aisle, points per rack face, and how
-firmware does self-addressing and the relay.
+Open questions: cable length per aisle and points per rack face.
 
 ## Documentation
 
