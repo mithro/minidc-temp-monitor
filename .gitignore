@@ -42,10 +42,11 @@ fp-info-cache
 # Local project settings
 *.kicad_prl
 
-# Generated fabrication output; the JLCPCB BOM and placement exports are kept
 __pycache__/
-hardware/*/out/gerbers/
-!hardware/*/out/*.csv
+# Fabrication output is kept in the repository, CSV exports included
+!hardware/*/out/**/*.csv
+*.gbrjob
+hardware/*/out/panel/gerbers/
 
 # Firmware build output
 firmware/build/

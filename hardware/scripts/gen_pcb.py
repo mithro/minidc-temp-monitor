@@ -1,52 +1,28 @@
 #!/usr/bin/env python3
-"""Place the MCU temperature sensor board and write an unrouted or routed PCB.
+"""Build a sensor board PCB from the schematic and the hand layout in layout.py.
 
-Usage: gen_pcb.py <variant> <project dir> [--route [--no-pour]]
+Usage: gen_pcb.py <variant> <project dir>
 
-Reads the schematic next to the PCB (via `kicad-cli sch export netlist`),
-loads stock KiCad footprints, places them from the tables below, draws the
-outline and, with --route, routes it with scripts/route.py and pours the ground
-zones (--no-pour stops after routing).  Exits non-zero if anything is left unrouted.
+Reads the schematic next to the PCB (via `kicad-cli sch export netlist`), loads
+stock KiCad footprints, and places parts, tracks, vias and silkscreen exactly as
+layout.py says.  Nothing is auto-routed: the only computed copper is the ground
+pour.  build.sh runs DRC afterwards, which is what proves every net is joined.
 """
-import math, os, subprocess, sys, tempfile
+import json, math, os, subprocess, sys, tempfile
 import pcbnew
-from pcbnew import FromMM, ToMM, VECTOR2I
+from pcbnew import FromMM, VECTOR2I
 from sexp import loads, find, first
+import layout as L
 
 FPDIR = os.environ.get('KICAD_FOOTPRINT_DIR', '/usr/share/kicad/footprints')
-W, L = 13.0, 42.0          # board height and length, mm
+MODELDIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '3dmodels')
 X0, Y0 = 100.0, 100.0      # board origin on the sheet
+LAYER = {'F': pcbnew.F_Cu, 'B': pcbnew.B_Cu}
 
-# Outline, clockwise from the top-left corner.  Zip-tie notches at x 15..17.5,
-# thermistor finger at top right (free end at x 26, joined to the board at x 33).
-OUTLINE = [(0, 0), (15, 0), (15, 1.2), (17.5, 1.2), (17.5, 0), (25, 0), (25, 3.6), (33, 3.6),
-           (33, 2.6), (26, 2.6), (26, 0), (L, 0), (L, W), (17.5, W), (17.5, W - 1.2),
-           (15, W - 1.2), (15, W), (0, W)]
-
-HOLE_KEEPOUT = (10.5, 6.5, 3.8)   # M3 screw head or 7 mm washer, kept clear of tracks and vias
-
-EP_VIA = {'ch32v005': (24.3, 7.4)}  # ground via in the QFN exposed pad
-
-# Ground pour, both layers.  Kept off the thermistor finger.
-POUR = [(0.4, 0.4), (24.6, 0.4), (24.6, 4.0), (33.4, 4.0), (33.4, 0.4), (L - 0.4, 0.4), (L - 0.4, W - 0.4), (0.4, W - 0.4)]
-
-COMMON_PLACE = {
-    'J1': (3.3, 6.5, 270), 'J2': (L - 3.3, 6.5, 90), 'H1': (10.5, 6.5, 0),
-    'RT1': (29.5, 1.3, 0), 'C3': (35.2, 1.3, 0), 'R1': (37.6, 1.3, 0),
-    'D1': (20.2, 1.5, 0), 'R2': (23.1, 1.5, 0),
-    'R3': (19.0, 4.4, 0), 'R4': (19.0, 5.6, 0),
-    'R5': (32.6, 5.4, 0), 'R6': (32.6, 6.6, 0),
-    'C1': (29.6, 7.6, 90), 'C2': (30.9, 7.6, 90),
-}
-PLACE = {
-    'ch32v003': dict(COMMON_PLACE, U1=(24.3, 7.4, 180), TP1=(19.6, 11.6, 0), TP2=(21.9, 11.6, 0), TP3=(24.2, 11.6, 0)),
-    'ch32v005': dict(COMMON_PLACE, U1=(24.3, 7.4, 0), C1=(22.9, 10.0, 180), TP1=(19.6, 11.6, 0), TP2=(21.9, 11.6, 0), TP3=(24.2, 11.6, 0),
-                     TP4=(26.5, 11.6, 0), TP5=(28.8, 11.6, 0), TP6=(31.1, 11.6, 0)),
-}
-SILK_NAME = {'ch32v003': 'CH32V003', 'ch32v005': 'CH32V005'}
 
 def P(x, y):
     return VECTOR2I(FromMM(X0 + x), FromMM(Y0 + y))
+
 
 def netlist(sch):
     with tempfile.TemporaryDirectory() as d:
@@ -66,17 +42,101 @@ def netlist(sch):
             nets[(first(node, 'ref')[1], first(node, 'pin')[1])] = name
     return comps, nets
 
-def text(board, s, x, y, layer, size=0.8, mirror=False):
+
+def text(board, s, x, y, layer, size=1.0, rot=0):
     t = pcbnew.PCB_TEXT(board)
     t.SetText(s)
     t.SetPosition(P(x, y))
     t.SetLayer(layer)
     t.SetTextSize(VECTOR2I(FromMM(size), FromMM(size)))
-    t.SetTextThickness(FromMM(size * 0.15))
-    t.SetMirrored(mirror)
+    t.SetTextThickness(FromMM(L.SILK_STROKE))
+    t.SetTextAngleDegrees(rot)
+    t.SetMirrored(layer == pcbnew.B_SilkS)
     board.Add(t)
 
+
+def local_models(fp):
+    """Point the footprint's 3D models at hardware/3dmodels, which holds the
+    few models these boards need, so renders do not need KiCad's model library."""
+    models = list(fp.Models())
+    fp.Models().clear()
+    for m in models:
+        stem = os.path.splitext(os.path.basename(m.m_Filename))[0]
+        for ext in ('.step', '.wrl'):
+            if os.path.exists(os.path.join(MODELDIR, stem + ext)):
+                m.m_Filename = '${KIPRJMOD}/../3dmodels/' + stem + ext
+                fp.Models().push_back(m)
+                break
+
+
+def window_paste(board, fp, vias, apertures):
+    """Exposed pad with vias in it: drop the stock paste opening and paste only
+    the area away from the vias, so solder is not drawn down the holes."""
+    for pad in list(fp.Pads()):
+        if not pad.GetNumber() and pad.IsOnLayer(pcbnew.F_Paste):
+            fp.Remove(pad)
+    centre = fp.GetPosition()
+    for dx, dy, w, h in apertures:
+        pad = pcbnew.PAD(fp)
+        pad.SetAttribute(pcbnew.PAD_ATTRIB_SMD)
+        pad.SetShape(pcbnew.F_Cu, pcbnew.PAD_SHAPE_RECT)
+        pad.SetSize(pcbnew.F_Cu, VECTOR2I(FromMM(w), FromMM(h)))
+        ls = pcbnew.LSET(); ls.AddLayer(pcbnew.F_Paste)
+        pad.SetLayerSet(ls)
+        pad.SetPosition(VECTOR2I(centre.x + FromMM(dx), centre.y + FromMM(dy)))
+        fp.Add(pad)
+
+
+def outline(board, pts, radius):
+    """Closed outline.  Inside (concave) corners get an arc of the given radius,
+    which is what the router bit leaves anyway and avoids a stress point."""
+    n = len(pts)
+    area = sum(pts[i][0] * pts[(i + 1) % n][1] - pts[(i + 1) % n][0] * pts[i][1] for i in range(n))
+    cut = []                                   # per corner: (point where the edge arrives, where it leaves, arc mid)
+    for i, b in enumerate(pts):
+        a, c = pts[i - 1], pts[(i + 1) % n]
+        ua = ((a[0] - b[0]) / math.dist(a, b), (a[1] - b[1]) / math.dist(a, b))
+        uc = ((c[0] - b[0]) / math.dist(c, b), (c[1] - b[1]) / math.dist(c, b))
+        turn = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])
+        if turn * area < 0 and radius:         # concave
+            p1 = (b[0] + ua[0] * radius, b[1] + ua[1] * radius)
+            p2 = (b[0] + uc[0] * radius, b[1] + uc[1] * radius)
+            centre = (b[0] + (ua[0] + uc[0]) * radius, b[1] + (ua[1] + uc[1]) * radius)
+            d = math.dist(b, centre)
+            mid = (centre[0] + (b[0] - centre[0]) * radius / d, centre[1] + (b[1] - centre[1]) * radius / d)
+            cut.append((p1, p2, mid))
+        else:
+            cut.append((b, b, None))
+    for i in range(n):
+        p1, p2, mid = cut[i]
+        if mid:
+            arc = pcbnew.PCB_SHAPE(board, pcbnew.SHAPE_T_ARC)
+            arc.SetArcGeometry(P(*p1), P(*mid), P(*p2))
+            arc.SetLayer(pcbnew.Edge_Cuts); arc.SetWidth(FromMM(0.1))
+            board.Add(arc)
+        seg = pcbnew.PCB_SHAPE(board, pcbnew.SHAPE_T_SEGMENT)
+        seg.SetStart(P(*p2)); seg.SetEnd(P(*cut[(i + 1) % n][0]))
+        seg.SetLayer(pcbnew.Edge_Cuts); seg.SetWidth(FromMM(0.1))
+        board.Add(seg)
+
+
+def rule_area(board, pts, pour_only):
+    """Copper keep-out on both layers: no pour, and unless pour_only, no tracks or vias."""
+    z = pcbnew.ZONE(board)
+    z.SetIsRuleArea(True)
+    ls = pcbnew.LSET(); ls.AddLayer(pcbnew.F_Cu); ls.AddLayer(pcbnew.B_Cu)
+    z.SetLayerSet(ls)
+    z.SetDoNotAllowCopperPour(True)
+    z.SetDoNotAllowTracks(not pour_only); z.SetDoNotAllowVias(not pour_only)
+    z.SetDoNotAllowPads(False); z.SetDoNotAllowFootprints(False)
+    o = z.Outline(); o.NewOutline()
+    for x, y in pts:
+        o.Append(FromMM(X0 + x), FromMM(Y0 + y))
+    board.Add(z)
+
+
 def build(variant, pdir):
+    lay = L.LAYOUT[variant]
     name = os.path.basename(os.path.normpath(pdir))
     sch, pcb = (os.path.join(pdir, name + ext) for ext in ('.kicad_sch', '.kicad_pcb'))
     comps, nets = netlist(sch)
@@ -86,10 +146,12 @@ def build(variant, pdir):
     ds = board.GetDesignSettings()
     nc = ds.m_NetSettings.GetDefaultNetclass()
     nc.SetClearance(FromMM(0.15)); nc.SetTrackWidth(FromMM(0.2))
-    nc.SetViaDiameter(FromMM(0.6)); nc.SetViaDrill(FromMM(0.3))
-    ds.m_TrackMinWidth = FromMM(0.127); ds.m_MinClearance = FromMM(0.127)
+    nc.SetViaDiameter(FromMM(L.VIA[0])); nc.SetViaDrill(FromMM(L.VIA[1]))
+    ds.m_TrackMinWidth = FromMM(0.15); ds.m_MinClearance = FromMM(0.15)
     ds.m_ViasMinSize = FromMM(0.5); ds.m_MinThroughDrill = FromMM(0.3)
-    ds.m_CopperEdgeClearance = FromMM(0.3); ds.m_HoleToHoleMin = FromMM(0.5)
+    ds.m_ViasMinAnnularWidth = FromMM(0.1)
+    ds.m_CopperEdgeClearance = FromMM(L.EDGE); ds.m_HoleToHoleMin = FromMM(0.25)
+    ds.m_HoleClearance = FromMM(0.2)
     ds.SetCustomTrackWidth(FromMM(0.2))
     ds.m_TentViasFront = ds.m_TentViasBack = True
 
@@ -98,17 +160,24 @@ def build(variant, pdir):
         ni = pcbnew.NETINFO_ITEM(board, nname)
         board.Add(ni)
         netobjs[nname] = ni
+    net = lambda n: netobjs[n] if n in netobjs else netobjs['/' + n]
 
-    place = PLACE[variant]
+    pads = {}                                   # 'R1.2' -> pad centre in board mm
     for ref, c in sorted(comps.items()):
         lib, fpname = c['footprint'].split(':')
         fp = pcbnew.FootprintLoad(os.path.join(FPDIR, lib + '.pretty'), fpname)
         fp.SetReference(ref); fp.SetValue(c['value'])
         fp.SetFPID(pcbnew.LIB_ID(lib, fpname))
-        x, y, rot = place[ref]
+        local_models(fp)
+        x, y, rot = lay['place'][ref]
         fp.SetPosition(P(x, y)); fp.SetOrientationDegrees(rot)
-        fp.Reference().SetVisible(False)
         fp.Value().SetVisible(False)
+        label = lay['labels'].get(ref)          # (dx, dy[, rotation[, text]]) from the part centre
+        r = fp.Reference()
+        r.SetVisible(False)
+        if label:
+            text(board, label[3] if len(label) > 3 else ref, x + label[0], y + label[1], pcbnew.F_SilkS,
+                 L.SILK_REF, label[2] if len(label) > 2 else 0)
         fp.SetPath(pcbnew.KIID_PATH('/' + c['path'].strip('/')))
         if 'dnp' in c['props']:
             fp.SetDNP(True)
@@ -119,141 +188,105 @@ def build(variant, pdir):
             n = nets.get((ref, pad.GetNumber()))
             if n:
                 pad.SetNet(netobjs[n])
+            if ref[0] in 'JT':                  # connector and test pads sit solid in the pour
+                pad.SetLocalZoneConnection(pcbnew.ZONE_CONNECTION_FULL)
+        if ref in lay.get('paste_windows', {}):
+            window_paste(board, fp, *lay['paste_windows'][ref])
         board.Add(fp)
-    missing = set(place) - set(comps)
+        for pad in fp.Pads():
+            if pad.GetNumber():
+                pos = pad.GetPosition()
+                pads.setdefault(f'{ref}.{pad.GetNumber()}', (pcbnew.ToMM(pos.x) - X0, pcbnew.ToMM(pos.y) - Y0))
+    missing = set(lay['place']) ^ set(comps)
     if missing:
-        raise SystemExit(f'placed but not in schematic: {missing}')
+        raise SystemExit(f'placement and schematic disagree on: {sorted(missing)}')
 
-    for a, b in zip(OUTLINE, OUTLINE[1:] + OUTLINE[:1]):
-        seg = pcbnew.PCB_SHAPE(board, pcbnew.SHAPE_T_SEGMENT)
-        seg.SetStart(P(*a)); seg.SetEnd(P(*b)); seg.SetLayer(pcbnew.Edge_Cuts); seg.SetWidth(FromMM(0.1))
-        board.Add(seg)
+    def pt(p):
+        """A track point: (x, y), 'REF.PAD', or ('REF.PAD', dx, dy)."""
+        if isinstance(p, str):
+            return pads[p]
+        if isinstance(p[0], str):
+            return (pads[p[0]][0] + p[1], pads[p[0]][1] + p[2])
+        return p
 
-    text(board, 'UP', 7.4, 1.5, pcbnew.F_SilkS)
-    text(board, 'DN', L - 4.0, 12.0, pcbnew.F_SilkS)
-    text(board, f'minidc temp {SILK_NAME[variant]} v0.1', 24, 5.0, pcbnew.B_SilkS, size=0.9, mirror=True)
-    text(board, 'SHARED BUS: R3 R4 = 0R', 21, 7.0, pcbnew.B_SilkS, size=0.8, mirror=True)
-    text(board, 'RELAY: R5 R6 = 4k7', 21, 8.6, pcbnew.B_SilkS, size=0.8, mirror=True)
-    text(board, 'ADDR/ID:', 6.5, 11.0, pcbnew.B_SilkS, size=0.8, mirror=True)
-    pcbnew.SaveBoard(pcb, board)
-    return pcb
+    outline(board, L.OUTLINE, L.CORNER_RADIUS)
+    hx, hy, hr = L.HOLE_KEEPOUT
+    rule_area(board, [(hx + hr * math.cos(math.radians(a)), hy + hr * math.sin(math.radians(a)))
+                      for a in range(0, 360, 10)], pour_only=False)
+    rule_area(board, L.FINGER, pour_only=True)
+    for pts in L.TAB_KEEPOUTS:
+        rule_area(board, pts, pour_only=True)
 
-def route(pcb, variant, tries=25):
-    """Route with the grid router in route.py.
+    for n, layer, width, pts in lay['tracks']:
+        pts = [pt(p) for p in pts]
+        for a, b in zip(pts, pts[1:]):
+            t = pcbnew.PCB_TRACK(board)
+            t.SetStart(P(*a)); t.SetEnd(P(*b))
+            t.SetWidth(FromMM(width)); t.SetLayer(LAYER[layer]); t.SetNet(net(n))
+            board.Add(t)
+    for n, *where in lay['vias'] + [('GND', x, y) for x, y in lay['stitch']]:
+        size = where[2] if len(where) > 2 else L.VIA
+        v = pcbnew.PCB_VIA(board)
+        v.SetPosition(P(*pt(tuple(where[:2]) if not isinstance(where[0], str) else where[0])))
+        v.SetWidth(pcbnew.F_Cu, FromMM(size[0])); v.SetDrill(FromMM(size[1]))
+        v.SetLayerPair(pcbnew.F_Cu, pcbnew.B_Cu); v.SetNet(net(n))
+        board.Add(v)
 
-    Ground is a pour on both layers, so each ground pad only gets a via to the
-    back; the thermistor's ground runs as a track along the finger, which has no
-    pour.  The router has no rip-up: when nets fail, they go to the front of the
-    order and the board is routed again from scratch."""
-    from route import Router
-    order, seen = None, None
-    for attempt in range(tries):
-        board = pcbnew.LoadBoard(pcb)
-        r = Router(board, (X0, Y0), (L, W), OUTLINE, keepouts=[HOLE_KEEPOUT])
-        r.escape('U1')
-        ep = r.seed_via('GND', *EP_VIA[variant]) if variant in EP_VIA else None
-        r.trees.pop('GND', None)
-        failed = {'GND': r.route_net('GND', refs=['C3', 'RT1'])}
-        r.trees.pop('GND', None)
-        failed['GND'] += r.drop_vias('GND', redo=['C3'])
-        if ep:      # tracks ring the QFN, so tie its ground via by track to a ground via well outside
-            far = {c for c in r.via_ends['GND'] if math.hypot(c[1] * 0.1 - ep[1] * 0.1, c[2] * 0.1 - ep[2] * 0.1) > 4}
-            if not r.tie('GND', {ep}, far, 0.3):
-                failed['GND'].append('U1')
-        # decoupling first: C1 straight to the MCU supply pin, and the connector trunks meet at C1
-        failed['VDD'] = r.route_net('VDD', refs=['C1', 'U1'], stubs=True)
-        # ground trunk on the back between the connectors' ground vias, so that later
-        # back-layer tracks cannot cut the ground path along the chain
-        if not r.tie('GND', {r.pad_via[('J1', '1')]}, {r.pad_via[('J2', '1')]}, 0.4, vias=False):
-            failed['GND'].append('trunk')
-        if order is None:
-            span = lambda net: max(abs(a[3][0] - b[3][0]) + abs(a[3][1] - b[3][1]) for a in r.pads[net] for b in r.pads[net])
-            order = sorted((n for n in r.pads if n != 'GND' and len(r.pads[n]) > 1), key=span)
-        for net in order:
-            failed.setdefault(net, [])
-            if net == 'VDD':                                  # wide trunk from connector to connector
-                failed[net] += r.route_net(net, 0.4, refs=['J1', 'J2'])
-            failed[net] += r.route_net(net)
-        failed = {k: v for k, v in failed.items() if v}
-        print(f'attempt {attempt}: not routed {failed}' if failed else f'attempt {attempt}: all routed', flush=True)
-        if not failed or set(failed) == seen:
-            break
-        seen = set(failed)
-        order = [n for n in order if n in failed] + [n for n in order if n not in failed]
-    pcbnew.SaveBoard(pcb, board)
-    if failed:
-        raise SystemExit(f'{pcb}: routing failed, unrouted board saved for inspection')
-    return r
+    for s, x, y, side, size, rot in lay['silk']:
+        text(board, s, x, y, pcbnew.F_SilkS if side == 'F' else pcbnew.B_SilkS, size, rot)
 
-def ground_groups(board, net):
-    """Groups of ground vias that the filled pours, pads and tracks join together."""
-    vias = [t for t in board.GetTracks() if t.Type() == pcbnew.PCB_VIA_T and t.GetNetname() == net]
-    parent = {}
-    def find(a):
-        parent.setdefault(a, a)
-        while parent[a] != a:
-            parent[a] = parent[parent[a]]
-            a = parent[a]
-        return a
-    def at(pos, layer):
-        """Everything on the net that has copper at this point of this layer."""
-        hits = [('via', v.GetPosition().x, v.GetPosition().y) for v in vias
-                if (v.GetPosition() - pos).EuclideanNorm() < v.GetWidth(layer) // 2]
-        for z in board.Zones():
-            if z.GetFirstLayer() == layer:
-                polys = z.GetFilledPolysList(layer)
-                hits += [('zone', layer, k) for k in range(polys.OutlineCount()) if polys.Contains(pos, k)]
-        hits += [('pad', p.GetPosition().x, p.GetPosition().y) for fp in board.GetFootprints() for p in fp.Pads()
-                 if p.GetNetname() == net and p.IsOnLayer(layer) and p.HitTest(pos)]
-        return hits
-    def join(items):
-        for other in items[1:]:
-            parent[find(other)] = find(items[0])
-    for v in vias:
-        me = ('via', v.GetPosition().x, v.GetPosition().y)
-        join([me] + at(v.GetPosition(), pcbnew.F_Cu) + at(v.GetPosition(), pcbnew.B_Cu))
-    for t in board.GetTracks():
-        if t.Type() != pcbnew.PCB_VIA_T and t.GetNetname() == net:
-            ends = [('pt', t.GetLayer(), p.x, p.y) for p in (t.GetStart(), t.GetEnd())]   # bends join segments
-            join(ends + at(t.GetStart(), t.GetLayer()) + at(t.GetEnd(), t.GetLayer()))
-    groups = {}
-    for v in vias:
-        groups.setdefault(find(('via', v.GetPosition().x, v.GetPosition().y)), []).append(v)
-    return sorted(groups.values(), key=len, reverse=True)
+    for x1, y1, x2, y2, side in lay['boxes']:   # filled silkscreen box to write on
+        box = pcbnew.PCB_SHAPE(board, pcbnew.SHAPE_T_RECT)
+        box.SetStart(P(x1, y1)); box.SetEnd(P(x2, y2))
+        box.SetLayer(pcbnew.F_SilkS if side == 'F' else pcbnew.B_SilkS)
+        box.SetWidth(FromMM(L.SILK_STROKE)); box.SetFilled(True)
+        board.Add(box)
 
-def pour(pcb, router):
-    """Add the ground zones and fill them.  Signal tracks can cut a piece of pour
-    off from the rest; such a piece is tied back with a track and the fill redone."""
-    board = router.board
-    gnd = board.FindNet('GND')
+    def inset(by):
+        """The board outline moved in by a distance, as one polygon."""
+        s = pcbnew.SHAPE_POLY_SET(); s.NewOutline()
+        for x, y in L.OUTLINE:
+            s.Append(P(x, y))
+        s.Deflate(FromMM(by), pcbnew.CORNER_STRATEGY_ROUND_ALL_CORNERS, FromMM(0.005))
+        return s
+    # The pour is drawn as the outline moved in by the edge clearance, so it cannot reach an edge.
+    pour_area = inset(L.EDGE)               # kept in a name: the outline below points into it
+    edge = pour_area.Outline(0)
+    pour = [edge.CPoint(i) for i in range(edge.PointCount())]
     for layer in (pcbnew.F_Cu, pcbnew.B_Cu):
         z = pcbnew.ZONE(board)
-        z.SetLayer(layer); z.SetNet(gnd)
-        z.SetLocalClearance(FromMM(0.25)); z.SetMinThickness(FromMM(0.2))
-        z.SetPadConnection(pcbnew.ZONE_CONNECTION_FULL)
+        z.SetLayer(layer); z.SetNet(net('GND'))
+        z.SetLocalClearance(FromMM(0.25)); z.SetMinThickness(FromMM(0.3))
+        z.SetPadConnection(pcbnew.ZONE_CONNECTION_THERMAL)
+        z.SetThermalReliefGap(FromMM(0.2)); z.SetThermalReliefSpokeWidth(FromMM(0.3))
         z.SetIslandRemovalMode(pcbnew.ISLAND_REMOVAL_MODE_ALWAYS)
         o = z.Outline(); o.NewOutline()
-        for x, y in POUR:
-            o.Append(FromMM(X0 + x), FromMM(Y0 + y))
+        for pt in pour:
+            o.Append(pt)
         board.Add(z)
-    cells = lambda vs: {(l, int(round((ToMM(v.GetPosition().x) - X0) / 0.1)), int(round((ToMM(v.GetPosition().y) - Y0) / 0.1)))
-                        for v in vs for l in (0, 1)}
-    for attempt in range(5):
-        pcbnew.ZONE_FILLER(board).Fill(board.Zones())
-        groups = ground_groups(board, 'GND')
-        if len(groups) < 2:
-            break
-        if attempt == 4 or not all(router.tie('GND', cells(g), cells(groups[0])) for g in groups[1:]):
-            pcbnew.SaveBoard(pcb, board)
-            raise SystemExit(f'{pcb}: ground is in {len(groups)} pieces and could not be tied together')
-        print(f'tied {len(groups) - 1} cut-off ground piece(s)')
+    pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+    # The filler run from a script does not apply the board-edge rule and DRC does not test fills
+    # against the edge, so check here that no copper pour comes closer to the edge than it should.
+    limit = inset(L.EDGE - 0.01)
+    for z in board.Zones():
+        for layer in (pcbnew.F_Cu, pcbnew.B_Cu):
+            if not z.GetIsRuleArea() and z.IsOnLayer(layer):
+                over = pcbnew.SHAPE_POLY_SET(z.GetFilledPolysList(layer))
+                over.BooleanSubtract(limit)
+                if over.Area() > 0:
+                    sys.exit('pour closer than %.1f mm to the board edge' % L.EDGE)
     pcbnew.SaveBoard(pcb, board)
+    if lay.get('paste_windows'):
+        # A windowed paste layer makes the footprint differ from its library copy on purpose.
+        pro = pcb[:-len('kicad_pcb')] + 'kicad_pro'
+        with open(pro) as f:
+            settings = json.load(f)
+        settings['board']['design_settings']['rule_severities']['lib_footprint_mismatch'] = 'ignore'
+        with open(pro, 'w') as f:
+            json.dump(settings, f, indent=2)
+            f.write('\n')
+    return pcb
+
 
 if __name__ == '__main__':
-    variant, pdir = sys.argv[1], sys.argv[2]
-    pcb = build(variant, pdir)
-    if '--route' in sys.argv:
-        router = route(pcb, variant)
-        if '--no-pour' not in sys.argv:
-            pour(pcb, router)
-    print('wrote', pcb)
+    print('wrote', build(sys.argv[1], sys.argv[2]))

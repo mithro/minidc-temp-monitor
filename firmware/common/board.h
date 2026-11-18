@@ -24,14 +24,14 @@
 #define UP_RCC             RCC_APB2Periph_GPIOC
 #define UP_I2C_REMAP       0
 
-#define DN_SDA_PORT        GPIOA      /* PA1, bonded with PD6 on pin 1 */
-#define DN_SDA_PIN         1
-#define DN_SCL_PORT        GPIOC
-#define DN_SCL_PIN         4
+#define DN_SDA_PORT        GPIOC
+#define DN_SDA_PIN         4
+#define DN_SCL_PORT        GPIOA
+#define DN_SCL_PIN         2
 
-#define NTC_PORT           GPIOA      /* PA2 = A0, divider fed from VDD */
-#define NTC_PIN            2
-#define NTC_ADC_CH         0
+#define NTC_PORT           GPIOA      /* PA1 = A1, bonded with PD6 on pin 1; divider fed from VDD */
+#define NTC_PIN            1
+#define NTC_ADC_CH         1
 
 #define LED_PORT           GPIOD      /* PD4, bonded with SWIO (PD1) on pin 8 */
 #define LED_PIN            4
@@ -61,11 +61,11 @@
 #define DN_SCL_PORT        GPIOC
 #define DN_SCL_PIN         3
 
-#define NTC_PORT           GPIOC      /* PC4 = A2, divider fed from PC7 */
+#define NTC_PORT           GPIOC      /* PC4 = A2, divider fed from PC6 */
 #define NTC_PIN            4
 #define NTC_ADC_CH         2
 #define NTC_DRV_PORT       GPIOC
-#define NTC_DRV_PIN        7
+#define NTC_DRV_PIN        6
 #define NTC_SETTLE_MS      30
 
 #define LED_PORT           GPIOA

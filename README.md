@@ -7,11 +7,12 @@ that is cheap enough to build in quantity from LCSC / JLCPCB parts.
 
 ## Status
 
-First hardware revision drawn, not yet built. [hardware/](hardware/README.md)
-holds KiCad 9 files for the sensor strip board (v0.1) in two versions, one
-per microcontroller. Both pass ERC and DRC. [firmware/](firmware/README.md)
-holds the relay firmware and an I2C bootloader for both; they build and pass
-tests in a simulated chain, and have not run on a board.
+Hardware drawn, not yet built. [hardware/](hardware/README.md) holds KiCad 9
+files for the sensor strip board (v0.2) in two versions, one per
+microcontroller, each with a 16-board JLCPCB assembly panel. Both pass ERC
+and DRC. [firmware/](firmware/README.md) holds the relay firmware and an I2C
+bootloader for both; they build and pass tests in a simulated chain, and have
+not run on a board.
 
 ## Design
 
@@ -27,7 +28,7 @@ tests in a simulated chain, and have not run on a board.
   command reads up to 16 temperatures, another blinks a board's identify
   LED, and boards are updated over the same cable, one at a time.
 - **Supply:** 3.3 V or 5 V, passed straight through the chain.
-- **Cost:** about $0.30 to $0.33 of parts per board, and an estimated $113
+- **Cost:** about $0.30 to $0.33 of parts per board, and an estimated $114
   to $118 for 200 assembled boards. See [hardware/COST.md](hardware/COST.md).
 - **Cables:** generic double-ended JST SH 4-pin leads from AliExpress, an
   estimated $41 plus shipping for a 200-board build, hub leads included.

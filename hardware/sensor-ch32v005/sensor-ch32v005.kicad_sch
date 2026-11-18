@@ -7,7 +7,7 @@
 	(title_block
 		(title "Temp sensor strip, CH32V005D6U6")
 		(date "2026-11-18")
-		(rev "0.1")
+		(rev "0.2")
 		(company "minidc-temp-monitor")
 	)
 	(lib_symbols
@@ -2186,7 +2186,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
 			(at 96.52 55.88 0)
 			(effects
 				(font
@@ -2213,7 +2213,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC" "C17168"
+		(property "LCSC" "C21189"
 			(at 96.52 55.88 0)
 			(effects
 				(font
@@ -2262,7 +2262,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
 			(at 111.76 58.42 0)
 			(effects
 				(font
@@ -2289,7 +2289,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC" "C17168"
+		(property "LCSC" "C21189"
 			(at 111.76 58.42 0)
 			(effects
 				(font
@@ -2340,7 +2340,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
 			(at 132.08 43.18 0)
 			(effects
 				(font
@@ -2367,7 +2367,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC" "C25900"
+		(property "LCSC" "C23162"
 			(at 132.08 43.18 0)
 			(effects
 				(font
@@ -2418,7 +2418,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
 			(at 144.78 43.18 0)
 			(effects
 				(font
@@ -2445,7 +2445,7 @@
 				(hide yes)
 			)
 		)
-		(property "LCSC" "C25900"
+		(property "LCSC" "C23162"
 			(at 144.78 43.18 0)
 			(effects
 				(font
@@ -3350,7 +3350,7 @@
 		)
 		(uuid "c3284b3d-b5e3-5704-89f7-718b60567b4b")
 	)
-	(label "AUX_PC6"
+	(label "NTC_DRV"
 		(at 45.72 116.84 180)
 		(effects
 			(font
@@ -3360,7 +3360,7 @@
 		)
 		(uuid "2d21d9ad-2859-50d6-9309-426e5a42b78d")
 	)
-	(label "NTC_DRV"
+	(label "AUX_PC7"
 		(at 45.72 119.38 180)
 		(effects
 			(font
@@ -4509,7 +4509,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" "TestPoint:TestPoint_Pad_D1.0mm"
+		(property "Footprint" "TestPoint:TestPoint_Pad_D1.5mm"
 			(at 269.24 93.98 0)
 			(effects
 				(font
@@ -4585,7 +4585,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" "TestPoint:TestPoint_Pad_D1.0mm"
+		(property "Footprint" "TestPoint:TestPoint_Pad_D1.5mm"
 			(at 269.24 101.6 0)
 			(effects
 				(font
@@ -4716,7 +4716,7 @@
 				(hide yes)
 			)
 		)
-		(property "Footprint" "TestPoint:TestPoint_Pad_D1.0mm"
+		(property "Footprint" "TestPoint:TestPoint_Pad_D1.5mm"
 			(at 269.24 109.22 0)
 			(effects
 				(font
@@ -4990,7 +4990,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "AUX_PC6"
+		(property "Value" "AUX_PC7"
 			(at 269.24 134.62 90)
 			(effects
 				(font
@@ -5038,7 +5038,7 @@
 			)
 		)
 	)
-	(label "AUX_PC6"
+	(label "AUX_PC7"
 		(at 264.16 134.62 180)
 		(effects
 			(font
@@ -5144,7 +5144,7 @@
 		)
 		(uuid "f12d96e0-3fc5-5ca0-a250-0e2af9ef5b02")
 	)
-	(text "PC4 = ADC channel 2 on the thermistor divider, powered from PC7 while sampling."
+	(text "PC4 = ADC channel 2 on the thermistor divider, powered from PC6 while sampling."
 		(exclude_from_sim no)
 		(at 20.32 167.64 0)
 		(effects
@@ -5155,7 +5155,7 @@
 		)
 		(uuid "9074bf1f-b3f5-5bb0-a129-88a63a9a5953")
 	)
-	(text "PA2 = identify LED (active low).  PA1 (ADC channel 1) and PC6 = spare pins on pads."
+	(text "PA2 = identify LED (active low).  PA1 (ADC channel 1) and PC7 = spare pins on pads."
 		(exclude_from_sim no)
 		(at 20.32 170.18 0)
 		(effects
