@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "minidc")(type "KiCad")(uri "${KIPRJMOD}/../lib/minidc.kicad_sym")(options "")(descr "Adjusted MCU symbols for the sensor boards"))
+)

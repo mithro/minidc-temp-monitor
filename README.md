@@ -7,29 +7,31 @@ that is cheap enough to build in quantity from LCSC / JLCPCB parts.
 
 ## Status
 
-Research phase. No hardware design files yet; the `.gitignore` is set up
-for KiCad, which is the intended PCB tool.
+First hardware revision drawn, not yet built. [hardware/](hardware/README.md)
+holds KiCad 9 files for the sensor strip board (v0.1) in two versions, one
+per microcontroller. Both pass ERC and DRC. There is no firmware yet.
 
-## Current direction (draft, not yet final)
+## Design
 
-- **Sensor board:** small PCB with a TMP175-class I2C temperature sensor
-  (27 addresses per bus) and two Qwiic / STEMMA QT (JST SH 4-pin)
-  connectors for daisy-chaining, 3.3 V only, pull-ups behind a
-  default-open solder jumper.
-- **Aisle link:** PCA9615 differential I2C over RJ45 / Cat5e, following
-  SparkFun QwiicBus pin use.
-- **Hub:** ESP32 or RP2040 with a TCA9548A mux, separate buses for the
-  hot and cold sides.
-- **Humidity and reference:** SHT40 for humidity on its own mux
-  channel, plus a TMP117 as a calibration reference.
+- **Sensor board:** a 42 x 13 mm pass-through strip with a WCH RISC-V
+  microcontroller (CH32V003 or CH32V005) reading a 100 k NTC thermistor,
+  and a Qwiic / STEMMA QT style connector (JST SH 4-pin) at each end for
+  daisy-chaining. Boards assign their own I2C addresses, so there are no
+  address straps.
+- **Chain:** by default each board relays the bus to the next one (I2C
+  target upstream, bit-banged controller downstream), so every cable is its
+  own short bus. A shared pass-through bus is a build option.
+- **Supply:** 3.3 V or 5 V, passed straight through the chain.
+- **Cost:** about $0.30 to $0.33 of parts per board, and an estimated $113
+  to $118 for 200 assembled boards. See [hardware/COST.md](hardware/COST.md).
 
-To check before layout: the TMP175/PCT2075 address set may overlap the
-TCA9548A's 0x70-0x77 range, which would limit how many sensors can share
-a bus segment with the mux. Confirm against the datasheets.
+Not designed yet: the hub that powers and reads the chains, the link from
+the hub to the first board of each chain, humidity sensing, and the
+firmware (self-addressing and the relay).
 
-Open questions: cable length per aisle, points per rack face, and whether
-5 V tolerance is worth the extra cost.
+Open questions: cable length per aisle and points per rack face.
 
 ## Documentation
 
-See [docs/](docs/README.md) for the research behind these choices.
+See [hardware/](hardware/README.md) for the boards and
+[docs/](docs/README.md) for the background research.
