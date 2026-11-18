@@ -11,16 +11,18 @@ each end. Boards daisy-chain on stock cables, and a hub reads the whole chain
 over I2C from one end.
 
 A board's address is its position in the chain, so there are no address
-straps and the hub sees the boards in their physical order. Each board costs
-about $0.30 in parts and $0.58 to $0.97 assembled, in a 240-board build.
+straps and the hub sees the boards in their physical order. In a 240-board
+build at JLCPCB each board costs $0.30 to $0.33 in parts and $0.58 to $0.97
+assembled, before shipping and tax, with the assembly fees calculated from
+JLCPCB's published rates.
 
 | `sensor-ch32v003` (SOP-8) | `sensor-ch32v005` (QFN-12) |
 | --- | --- |
 | ![sensor-ch32v003: 3D view, then top, bottom and side views with dimensions](hardware/sensor-ch32v003/out/board-3d.png) | ![sensor-ch32v005: 3D view, then top, bottom and side views with dimensions](hardware/sensor-ch32v005/out/board-3d.png) |
 
 The KiCad 9 projects are `hardware/sensor-ch32v003` and
-`hardware/sensor-ch32v005`. Each has its gerbers, parts list and placement
-file ready to upload in `out/`.
+`hardware/sensor-ch32v005`. Each has the panel gerbers, parts list and
+placement file for an order in `out/panel/`.
 
 Contents:
 
@@ -92,7 +94,7 @@ microcontroller.
 | Spare pins | none | two GPIOs and reset on pads |
 | Board finish costed | lead-free HASL | ENIG |
 | Parts per board | $0.33 | $0.30 |
-| 240 boards assembled, JLCPCB | $140 | $233 |
+| 240 boards assembled, JLCPCB | $140 | $233, with X-ray inspection |
 | 240 boards assembled, NextPCB | $529 | $651 |
 
 The board has a 3.2 mm hole for an M3 screw, a waist for a zip tie and a flat
@@ -107,7 +109,7 @@ the supply voltage limits are in [hardware/README.md](hardware/README.md).
 | Item | Qty | Notes | Details |
 | --- | --- | --- | --- |
 | Sensor strip board, either version | one per sensor point | Ordered assembled, as panels of 16. | [hardware/README.md](hardware/README.md) |
-| Hub | one | Anything with a Linux I2C bus (`/dev/i2c-N`), pull-ups on SDA and SCL, and a 3.3 V or 5 V supply for the chain. | [hub side](firmware/README.md#hub-side) |
+| Hub | one I2C bus per chain | Anything with a Linux I2C bus (`/dev/i2c-N`), pull-ups on SDA and SCL, and a 3.3 V or 5 V supply for the chain. Every chain needs a bus of its own, and a 200-board build at 3.3 V is at least 10 chains. The pull-ups must suit the chain voltage. | [hub side](firmware/README.md#hub-side), [supply voltage](hardware/README.md#supply-voltage) |
 | WCH-LinkE programmer | one | Puts the bootloader and the first application on blank boards. | [programming a blank board](firmware/README.md#programming-a-blank-board) |
 
 ### Parts on each board
@@ -122,10 +124,11 @@ the supply voltage limits are in [hardware/README.md](hardware/README.md).
 
 ### Cables
 
-Generic double-ended JST SH 1.0 mm 4-pin leads from AliExpress, about $0.10
-each, wired straight through: pin 1 at one end reaches pin 1 at the other.
-Sellers usually call that version "reverse". The other version puts the
-supply across the wrong pins.
+Generic double-ended JST SH 1.0 mm 4-pin leads from AliExpress, listed at
+about $0.10 each, wired straight through: pin 1 at one end reaches pin 1 at
+the other. Sellers are expected to call that version "reverse", which is not
+confirmed, so check a lead from every lot with a meter. The other version
+puts the supply across the wrong pins.
 
 | Lead | Use |
 | --- | --- |
@@ -142,21 +145,26 @@ directions apart.
 1. Pick a version. The files are in `hardware/sensor-ch32v003/out/panel/` or
    `hardware/sensor-ch32v005/out/panel/`.
 2. Upload `gerbers.zip` to [JLCPCB](https://jlcpcb.com) as a new PCB order
-   with these options:
+   with the options in the table below.
+3. Add assembly, and give it `bom-jlc.csv` and `cpl-jlc.csv` from the same
+   folder. They are for the relay fitting.
+4. Check the placement preview before paying. The part rotations have not
+   been checked against JLCPCB's orientations. On a CH32V005 order, check
+   whether X-ray inspection is charged.
 
 | Option | Value |
 | --- | --- |
 | Size | 107&nbsp;x&nbsp;132 mm panel |
 | Panel | "Panel by Customer", 2 columns, 8 rows, 16 boards |
+| Quantity | 15 panels |
 | Layers | 2 |
 | Thickness | 1.6 mm FR-4 |
 | Copper | 1 oz |
 | Finish | lead-free HASL for the CH32V003, ENIG for the CH32V005 |
+| Assembly | Economic, top side, tooling holes "Added by Customer" |
 
-3. Add assembly, and give it `bom-jlc.csv` and `cpl-jlc.csv` from the same
-   folder. They are for the relay fitting.
-4. Check the placement preview before paying. The part rotations have not
-   been checked against JLCPCB's orientations.
+Nobody has placed this order yet. The bare panel price is JLCPCB's online
+quote, and its assembly step, which needs a sign-in, has not been reached.
 
 15 panels make 240 boards. [hardware/COST.md](hardware/COST.md) has the cost
 line by line, and [hardware/QUOTES.md](hardware/QUOTES.md) compares the
@@ -170,7 +178,8 @@ calculated. The files for NextPCB's quote page are in
 1. **Program each board.** Write the bootloader, the application and the
    option word through the SWIO pad with a WCH-LinkE, as in
    [programming a blank board](firmware/README.md#programming-a-blank-board).
-   A board with no firmware does not pass the bus on, so the chain stops
+   The option word for the CH32V005 has not been checked on a real part. A
+   board with no firmware does not pass the bus on, so the chain stops
    there.
 2. **Check the cables.** Test one lead from every lot between two unpowered
    boards with a meter before powering anything
@@ -180,9 +189,14 @@ calculated. The files for NextPCB's quote page are in
 4. **Power it.** One chain runs at one voltage. Keep a 3.3 V chain to about
    20 boards; a 5 V chain can be longer and must have a regulated supply
    ([supply voltage](hardware/README.md#supply-voltage),
-   [chain head and hub](hardware/CABLES.md#chain-head-and-hub)).
-5. **Find each board.** Scan the chain, blink a board's LED, and write its
-   position in the white box on the back.
+   [chain head and hub](hardware/CABLES.md#chain-head-and-hub)). Connect
+   the hub before powering the chain: with nothing on J1 of the first board
+   the boards may wait in their bootloaders until `minidc.py boot` starts
+   them. With CH32V005 boards, keep the hub quiet on the bus for the first
+   second after power-on ([bootloader](firmware/README.md#bootloader)).
+5. **Find each board.** Scan the chain and blink a board's LED with the
+   [hub commands](#reading-temperatures), and write its position in the
+   white box on the back.
 
 | Pin of J1 and J2 | Signal |
 | --- | --- |
@@ -198,21 +212,22 @@ only. It is a `Chain` class to import and a command line over Linux
 `/dev/i2c-N`:
 
 ```
-firmware/tools/minidc.py --bus 1 scan
-firmware/tools/minidc.py --bus 1 temps
-firmware/tools/minidc.py --bus 1 led 7 blink 30
-firmware/tools/minidc.py --bus 1 update 7 build/relay-ch32v003.bin
+python3 firmware/tools/minidc.py --bus 1 scan
+python3 firmware/tools/minidc.py --bus 1 temps
+python3 firmware/tools/minidc.py --bus 1 led 7 blink 30
+python3 firmware/tools/minidc.py --bus 1 update 7 firmware/build/relay-ch32v003.bin
 ```
 
-Reading all 200 boards of a chain takes about 21 s in simulation, at the
-default 10 kHz per hop. The commands, status codes and the update procedure
+A simulated 200-board chain reads in about 21 s at the default 10 kHz per
+hop. The hub must end every write with a STOP before it reads, and tolerate
+short clock stretching by the first board. The commands, status codes and the update procedure
 are in [firmware/README.md](firmware/README.md#protocol).
 
 ## Rebuilding the files
 
 The KiCad files are generated by the scripts in `hardware/scripts/`, so
 change the scripts and rebuild rather than editing the boards by hand. This
-needs KiCad 9, Pillow and openpyxl:
+needs KiCad 9, Pillow, openpyxl, the DejaVu fonts and zip:
 
 ```
 hardware/build.sh
@@ -231,7 +246,7 @@ make -C firmware          # images in firmware/build/
 make -C firmware test     # host tests
 ```
 
-CI builds the firmware and runs its tests on every change.
+CI builds the firmware and runs its tests on every firmware change.
 
 ## Further reading
 
