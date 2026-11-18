@@ -135,11 +135,7 @@ void __attribute__((noreturn, used)) boot_main(void)
 
 		IWDG->CTLR = 0xAAAA;                    /* in case a watchdog is running */
 
-		if (s1 & I2C_STAR1_ADDR) {              /* addressed: reading STAR2 clears it */
-			if (!(I2C1->STAR2 & I2C_STAR2_TRA))
-				rx = 1;
-			idx = 0;
-		}
+		/* The data and stop of a finished write come before a new address. */
 		if (s1 & I2C_STAR1_RXNE) {
 			uint8_t d = (uint8_t)I2C1->DATAR;
 
@@ -147,10 +143,6 @@ void __attribute__((noreturn, used)) boot_main(void)
 				f[idx] = d;
 			if (idx < 255)
 				idx++;
-		}
-		if (s1 & I2C_STAR1_TXE) {
-			I2C1->DATAR = idx < b.tx_len ? f[idx] : 0xFF;
-			idx++;
 		}
 		if (s1 & I2C_STAR1_STOPF) {             /* end of a write to us */
 			I2C1->CTLR1 = I2C_CTLR1_PE | I2C_CTLR1_ACK;
@@ -163,6 +155,15 @@ void __attribute__((noreturn, used)) boot_main(void)
 				I2C1->CTLR1 = I2C_CTLR1_PE | I2C_CTLR1_ACK;
 				rx = 0;
 			}
+		}
+		if (s1 & I2C_STAR1_ADDR) {              /* addressed: reading STAR2 clears it */
+			if (!(I2C1->STAR2 & I2C_STAR2_TRA))
+				rx = 1;
+			idx = 0;
+		}
+		if (s1 & I2C_STAR1_TXE) {
+			I2C1->DATAR = idx < b.tx_len ? f[idx] : 0xFF;
+			idx++;
 		}
 		if (s1 & I2C_STAR1_AF) {                /* end of a read from us */
 			I2C1->STAR1 = ~I2C_STAR1_AF;
@@ -179,7 +180,9 @@ void __attribute__((naked, used, section(".init"))) _start(void)
 	__asm__ volatile(
 		".option push\n"
 		".option norelax\n"
+		".option norvc\n"
 		"la sp, _eusrstack\n"
-		".option pop\n"
-		"j boot_main\n");
+		"j boot_main\n"
+		".word 0x3142444d\n"            /* MDC_BOOT_SIG at MDC_BOOT_SIG_OFF */
+		".option pop\n");
 }

@@ -2,6 +2,7 @@
 """Tests of tools/minidc.py against the simulated chain (build/sim-*), which
 runs the firmware's own protocol code.  Usage: test_hub.py BUILD_DIR"""
 import os
+import random
 import subprocess
 import sys
 import tempfile
@@ -50,6 +51,24 @@ class SimTransport:
         self.p.wait()
 
 
+class LossyTransport(SimTransport):
+    """Flips a bit in some of the replies the hub reads."""
+
+    def __init__(self, mcu, n):
+        super().__init__(mcu, n)
+        self.rng = random.Random(1)
+        self.damaged = 0
+
+    def read(self, n):
+        data = super().read(n)
+        if data and data[0] != minidc.ST_BUSY and self.rng.random() < 1 / 7:
+            self.damaged += 1
+            data = bytearray(data)
+            data[self.rng.randrange(6 + data[3] if data[3] <= 66 else 6)] ^= 1 << self.rng.randrange(8)
+            data = bytes(data)
+        return data
+
+
 def app_image(mcu):
     """The real relay binary if it has been built, else stand-in bytes."""
     path = os.path.join(BUILD, f'relay-{mcu}.bin')
@@ -95,15 +114,19 @@ def run(mcu):
         assert (programs > 0) == (i == 7), (i, programs)
     assert len(chain.scan()) == 20
 
-    # Too large an image is refused before anything is erased.
+    # Too large an image, or one for the other MCU, is refused before the
+    # board leaves its application.
     size, page = minidc.MCU_BY_NAME[mcu]
-    try:
-        chain.update(3, bytes(size - page + 1))
-        raise AssertionError('oversize image accepted')
-    except minidc.ChainError:
-        pass
-    assert t.state(3)[1] == 0
-    chain.start_application(3)
+    other = bytes(100) + minidc.APP_TAG + bytes([8 - mcu_id]) + bytes(100)
+    for bad in (bytes(size - page + 1), other):
+        try:
+            chain.update(3, bad)
+            raise AssertionError('bad image accepted')
+        except minidc.ChainError:
+            pass
+        assert t.state(3) == ('app', 0, 0)
+    if os.path.exists(os.path.join(BUILD, f'relay-{mcu}.bin')):
+        assert minidc.image_mcu(image) == mcu_id
 
     # A blank board stops the chain there until it is given an application.
     assert t.cmd('blank 4') == 'ok'
@@ -142,11 +165,13 @@ def run(mcu):
         os.unlink(f.name)
     t.close()
 
-    # Update every board of a short chain, nearest first.
-    t = SimTransport(mcu, 5)
+    # Update every board of a short chain, nearest first, with one hub read
+    # in seven damaged.
+    t = LossyTransport(mcu, 5)
     chain = minidc.Chain(t)
     for hop in range(5):
         chain.update(hop, image)
+    assert t.damaged > 20
     assert all(t.state(i)[2] > 0 and t.state(i)[0] == 'app' for i in range(5))
     assert len(chain.temps()) == 5
     t.close()

@@ -41,11 +41,16 @@ all: $(foreach m,$(MCUS),$(B)/relay-$(m).bin $(B)/relay-$(m)-full.bin $(B)/boot-
 $(B):
 	mkdir -p $@
 
+# Rebuild the applications when DN_I2C_HZ changes.
+$(B)/dn-hz-$(DN_I2C_HZ): | $(B)
+	rm -f $(B)/dn-hz-*
+	touch $@
+
 define mcu_rules
 $(B)/relay-$(1).ld: $(CH32FUN)/ch32fun.ld | $(B)
 	$(PREFIX)-gcc -E -P -x c -DTARGET_MCU_LD=$(LD_$(1)) $$< > $$@
 
-$(B)/relay-$(1).elf: $(RELAY_DEP) $(B)/relay-$(1).ld
+$(B)/relay-$(1).elf: $(RELAY_DEP) $(B)/relay-$(1).ld $(B)/dn-hz-$(DN_I2C_HZ)
 	$(PREFIX)-gcc $(CFLAGS_COMMON) $(FLAGS_$(1)) -DDN_I2C_HZ=$(DN_I2C_HZ)u -Irelay \
 		$(RELAY_SRC) -o $$@ -T $(B)/relay-$(1).ld $(LDFLAGS_COMMON) -Wl,-Map=$(B)/relay-$(1).map
 

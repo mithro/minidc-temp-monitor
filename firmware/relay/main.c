@@ -24,8 +24,8 @@
 /* Time budget per hop: a full frame each way plus the poll gaps. */
 #define HOP_MS             (2u * MDC_MAX_FRAME * 9u * 1000u / DN_I2C_HZ + 30u)
 /* Time allowed at the far end: the slowest command is a bootloader COMMIT,
- * which checks the whole image (about 0.3 s for a full CH32V005). */
-#define BASE_MS            600u
+ * which checks the whole image (roughly 0.4 s for a full CH32V005). */
+#define BASE_MS            1000u
 
 #define SAMPLE_PERIOD_MS   1000u
 #define SAMPLES            16
@@ -38,9 +38,12 @@ static volatile uint32_t ms_ticks;
 void SysTick_Handler(void) __attribute__((interrupt));
 void SysTick_Handler(void)
 {
-	SysTick->CMP += F_CPU / 1000u;
+	/* Catch up if the interrupt was held off for more than a tick. */
+	do {
+		SysTick->CMP += F_CPU / 1000u;
+		ms_ticks++;
+	} while ((int32_t)(SysTick->CNT - SysTick->CMP) >= 0);
 	SysTick->SR = 0;
-	ms_ticks++;
 }
 
 static uint32_t millis(void)
@@ -90,6 +93,19 @@ void I2C1_EV_IRQHandler(void)
 {
 	uint32_t s1 = I2C1->STAR1;
 
+	/* The data and stop of a finished write come before a new address. */
+	if (s1 & I2C_STAR1_RXNE) {
+		uint8_t d = (uint8_t)I2C1->DATAR;
+
+		if (isr_idx < MDC_MAX_FRAME)
+			up_rx[isr_idx] = d;
+		if (isr_idx < 255)
+			isr_idx++;
+	}
+	if (s1 & I2C_STAR1_STOPF) {             /* end of a write to us */
+		I2C1->CTLR1 |= I2C_CTLR1_PE;        /* writing CTLR1 clears STOPF */
+		isr_rx_done();
+	}
 	if (s1 & I2C_STAR1_ADDR) {              /* addressed: reading STAR2 clears it */
 		uint32_t s2 = I2C1->STAR2;
 
@@ -108,22 +124,10 @@ void I2C1_EV_IRQHandler(void)
 			isr_rx = 1;
 		}
 	}
-	if (s1 & I2C_STAR1_RXNE) {
-		uint8_t d = (uint8_t)I2C1->DATAR;
-
-		if (isr_idx < MDC_MAX_FRAME)
-			up_rx[isr_idx] = d;
-		if (isr_idx < 255)
-			isr_idx++;
-	}
 	if (s1 & I2C_STAR1_TXE) {
 		I2C1->DATAR = (isr_tx && isr_idx < isr_tx_len) ? isr_tx[isr_idx] : 0xFF;
 		if (isr_idx < 255)
 			isr_idx++;
-	}
-	if (s1 & I2C_STAR1_STOPF) {             /* end of a write to us */
-		I2C1->CTLR1 |= I2C_CTLR1_PE;        /* writing CTLR1 clears STOPF */
-		isr_rx_done();
 	}
 }
 
@@ -433,11 +437,17 @@ static void led_task(uint32_t now)
 	}
 }
 
+static int have_bootloader(void)
+{
+	return *(const uint32_t *)(BOOT_AREA_ADDR + MDC_BOOT_SIG_OFF) == MDC_BOOT_SIG;
+}
+
 uint8_t plat_flags(void *ctx)
 {
 	(void)ctx;
 	return (uint8_t)((ntc_temp != MDC_TEMP_INVALID ? MDC_INFO_F_SENSOR : 0) |
-			(led_mode != MDC_LED_OFF ? MDC_INFO_F_LED : 0));
+			(led_mode != MDC_LED_OFF ? MDC_INFO_F_LED : 0) |
+			(have_bootloader() ? MDC_INFO_F_BOOTLDR : 0));
 }
 
 /* ---- Restart into the bootloader ------------------------------------ */
@@ -445,11 +455,15 @@ uint8_t plat_flags(void *ctx)
 static uint8_t boot_pending;
 static uint32_t boot_at;
 
-void plat_enter_boot(void *ctx)
+int plat_enter_boot(void *ctx)
 {
 	(void)ctx;
+	if (!have_bootloader())
+		return 0;
+	up_reply_read = 0;
 	boot_pending = 1;
 	boot_at = millis() + BOOT_FALLBACK_MS;
+	return 1;
 }
 
 uint32_t plat_millis(void *ctx)
@@ -461,6 +475,9 @@ uint32_t plat_millis(void *ctx)
 /* ---- Main ------------------------------------------------------------ */
 
 static struct relay relay;
+
+/* Lets the hub tool tell which board an application image is for. */
+static const char app_tag[] = { 'M', 'D', 'C', '-', 'A', 'P', 'P', ':', BOARD_MCU };
 
 int main(void)
 {
@@ -499,6 +516,7 @@ int main(void)
 #endif
 
 	ntc_init();
+	(void)*(volatile const char *)app_tag;      /* keep the tag in the image */
 	relay_init(&relay, 0, BOARD_MCU, BOARD_PAGE / MDC_CHUNK, HOP_MS, BASE_MS);
 	up_init();
 

@@ -26,5 +26,8 @@ SECTIONS
 
 	PROVIDE(_eusrstack = ORIGIN(RAM) + LENGTH(RAM));
 
+	/* The application looks for the signature word at this offset. */
+	ASSERT(boot_main >= 16, "boot signature is not at offset 12")
+
 	/DISCARD/ : { *(.eh_frame) *(.comment) *(.note.*) }
 }

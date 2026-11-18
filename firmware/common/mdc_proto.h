@@ -49,6 +49,7 @@
 #define MDC_INFO_F_APP_OK  0x01   /* bootloader: a valid application is present */
 #define MDC_INFO_F_SENSOR  0x02   /* application: thermistor reading is in range */
 #define MDC_INFO_F_LED     0x04   /* application: identify LED is active */
+#define MDC_INFO_F_BOOTLDR 0x08   /* application: our bootloader is in the boot area */
 
 /* TEMPS reply payload: n, end, then n records of temp (int16 LE, 0.01 C) and
  * raw (uint16 LE, ADC reading scaled to 16 bits, 65535 = VDD). */
@@ -67,6 +68,11 @@
 /* Firmware update */
 #define MDC_CHUNK          64
 #define MDC_MARKER_MAGIC   0x3143444Du   /* "MDC1" */
+/* Word at offset MDC_BOOT_SIG_OFF of the boot area when our bootloader is there. */
+#define MDC_BOOT_SIG       0x3142444Du   /* "MDB1" */
+#define MDC_BOOT_SIG_OFF   12
+/* The application image contains this text followed by its MCU type byte. */
+#define MDC_APP_TAG        "MDC-APP:"
 
 /* CRC-16/CCITT-FALSE: poly 0x1021, init 0xFFFF, MSB first, no final xor. */
 static inline uint16_t mdc_crc16(uint16_t crc, const uint8_t *p, uint32_t n)

@@ -138,8 +138,8 @@ static void command(struct relay *r, uint8_t n)
 		break;
 
 	case MDC_CMD_ENTER_BOOT:
-		reply(r, MDC_ST_OK, 0, 0);
-		plat_enter_boot(r->ctx);
+		/* Without our bootloader there would be no way back. */
+		reply(r, plat_enter_boot(r->ctx) ? MDC_ST_OK : MDC_ST_BAD_CMD, 0, 0);
 		break;
 
 	case MDC_CMD_BOOT:                  /* already running the application */

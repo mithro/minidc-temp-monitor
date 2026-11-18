@@ -40,6 +40,7 @@ struct board {
 	int index;
 	int present;                /* 0: nothing answers at this position */
 	int hung;                   /* takes commands, never replies */
+	int no_bootloader;          /* application only, nothing in the boot area */
 	int in_boot;
 	uint16_t raw;               /* simulated thermistor reading */
 
@@ -287,10 +288,18 @@ uint8_t plat_flags(void *ctx)
 	struct board *b = ctx;
 
 	return (uint8_t)((ntc_centi_c(b->raw) != MDC_TEMP_INVALID ? MDC_INFO_F_SENSOR : 0) |
-			(b->led_mode ? MDC_INFO_F_LED : 0));
+			(b->led_mode ? MDC_INFO_F_LED : 0) | (b->no_bootloader ? 0 : MDC_INFO_F_BOOTLDR));
 }
 
-void plat_enter_boot(void *ctx) { ((struct board *)ctx)->boot_pending = 1; }
+int plat_enter_boot(void *ctx)
+{
+	struct board *b = ctx;
+
+	if (b->no_bootloader)
+		return 0;
+	b->boot_pending = 1;
+	return 1;
+}
 
 /* ---- the chain ---- */
 
@@ -631,11 +640,13 @@ static void test_update(void)
 	board_reset(&boards[h], 0);
 	CHECK(!boards[h].in_boot);
 	board_reset(&boards[h], 1);
-	uint8_t c[4] = { 0, 0x10, 0x34, 0x12 };
-	CHECK(hub_cmd(h, MDC_CMD_WRITE, w, sizeof(w), p, &len, &hops, t_for(h)) == MDC_ST_BAD_ARG ||
-	      BOOT_PAGE == MDC_CHUNK);
+	/* A refused WRITE leaves the valid image alone. */
+	w[0] = 4;
+	CHECK(hub_cmd(h, MDC_CMD_WRITE, w, sizeof(w), p, &len, &hops, t_for(h)) == MDC_ST_BAD_ARG);
 	w[0] = 0;
-	memcpy(w + 2, img, MDC_CHUNK);
+	CHECK(hub_cmd(h, MDC_CMD_INFO, 0, 0, p, &len, &hops, t_for(h)) == MDC_ST_OK);
+	CHECK(p[0] == MDC_MODE_BOOT && (p[5] & MDC_INFO_F_APP_OK));
+	uint8_t c[4] = { 0, 0x10, 0x34, 0x12 };
 	CHECK(hub_cmd(h, MDC_CMD_COMMIT, c, 4, p, &len, &hops, t_for(h)) == MDC_ST_FLASH);
 
 	/* The full update, then start it and see the chain whole again. */
@@ -662,6 +673,15 @@ static void test_update(void)
 	CHECK(memcmp(boards[0].flash, big, sizeof(big)) == 0);
 	CHECK(hub_cmd(0, MDC_CMD_BOOT, 0, 0, p, &len, &hops, t_for(0)) == MDC_ST_OK);
 	CHECK(hub_cmd(7, MDC_CMD_INFO, 0, 0, p, &len, &hops, t_for(7)) == MDC_ST_OK);
+
+	/* A board without our bootloader refuses to leave its application. */
+	boards[2].no_bootloader = 1;
+	CHECK(hub_cmd(2, MDC_CMD_ENTER_BOOT, 0, 0, p, &len, &hops, t_for(2)) == MDC_ST_BAD_CMD);
+	CHECK(!boards[2].in_boot);
+	CHECK(hub_cmd(2, MDC_CMD_INFO, 0, 0, p, &len, &hops, t_for(2)) == MDC_ST_OK);
+	CHECK(p[0] == MDC_MODE_APP && !(p[5] & MDC_INFO_F_BOOTLDR));
+	CHECK(hub_cmd(3, MDC_CMD_INFO, 0, 0, p, &len, &hops, t_for(3)) == MDC_ST_OK);
+	CHECK(p[5] & MDC_INFO_F_BOOTLDR);
 
 	/* A blank board (no image) waits in its bootloader. */
 	chain_init(3, 0);

@@ -6,8 +6,8 @@ default relay fitting. It is built with the open
 
 | Image | CH32V003J4M6 | CH32V005D6U6 | Where it lives |
 |---|---|---|---|
-| Relay application | 4.2 KB of 16 KB | 4.2 KB of 32 KB | user flash |
-| I2C bootloader | 1484 of 1920 bytes | 1504 of 3328 bytes | boot area |
+| Relay application | 4.3 KB of 16 KB | 4.3 KB of 32 KB | user flash |
+| I2C bootloader | 1500 of 1920 bytes | 1532 of 3328 bytes | boot area |
 
 **None of this has run on a board yet.** The protocol logic of both programs
 is tested on a PC in a simulated chain; the code that touches the hardware is
@@ -74,16 +74,18 @@ repeated. Bytes past the end read as 0xFF.
 
 The hub writes a command, waits a few milliseconds, then reads. While `status`
 is 1 (busy) it reads again. A new command replaces one that is still under
-way. Allow about 0.16 s per hop plus 0.8 s before giving up, at 10 kHz. A
-board in its bootloader does not acknowledge its address while it is writing
-flash, which the hub should treat as busy.
+way. Allow about 0.16 s per hop plus 1.2 s before giving up, at 10 kHz. A
+reply that arrives damaged can simply be read again. A board in its
+bootloader does not acknowledge its address while it is writing flash, which
+the hub should treat as busy. End every write with a STOP before reading; a
+repeated start is not supported.
 
 | `cmd` | Name | Payload | Reply payload |
 |---|---|---|---|
 | 0x01 | INFO | none | 8 bytes, below |
 | 0x02 | TEMPS | `count` 1 to 16 | `n`, `end`, then `n` records |
 | 0x03 | LED | `mode` (0 off, 1 on, 2 blink), `seconds` (0 = until changed) | none |
-| 0x10 | ENTER_BOOT | none | none; the board restarts into its bootloader once the reply has been read |
+| 0x10 | ENTER_BOOT | none | none; the board restarts into its bootloader once the reply has been read. Status 3 if the boot area does not hold this bootloader |
 | 0x11 | WRITE | `addr` (2 bytes), 64 data bytes | none (bootloader only) |
 | 0x12 | COMMIT | `len` (2 bytes), `crc` (2 bytes) | none (bootloader only) |
 | 0x13 | BOOT | none | none; the bootloader starts the application once the reply has been read |
@@ -106,7 +108,8 @@ flash, which the hub should treat as busy.
 5 = CH32V005), protocol version (1), firmware version major and minor, `flags`,
 flash page size in 64-byte chunks (1 or 4), one reserved byte. Flags: bit 0
 valid application present (bootloader), bit 1 thermistor reading in range
-(application), bit 2 identify LED active (application).
+(application), bit 2 identify LED active (application), bit 3 this bootloader
+is in the boot area (application).
 
 **TEMPS** reads up to 16 boards in one go, starting at board `hop`. The
 target puts its own record first and asks the next board for the rest. Each
@@ -139,7 +142,14 @@ it runs first after power-on. It then decides:
 While it stays it answers the same protocol at the same address, with INFO,
 WRITE, COMMIT and BOOT. It does not relay, so boards behind it are out of
 reach (status 9) until its application runs again. That is why a chain is
-updated one board at a time.
+updated one board at a time. It waits for BOOT with no time limit, so a hub
+that stops part-way through an update has to come back and finish or send
+BOOT (`minidc.py boot`).
+
+During the window the bootloader turns on the internal pull-up (about 45 k to
+VDD) on upstream SDA, so an unconnected input reads high. On a 5 V chain
+behind a 3.3 V hub that adds a few tens of microamps into the hub's pull-up
+for that time.
 
 **Updating a board** (what `minidc.py update` does):
 
@@ -154,6 +164,10 @@ updated one board at a time.
 
 If power fails part-way, the board waits in its bootloader and the update can
 be run again.
+
+The application image carries the text `MDC-APP:` followed by its MCU type
+byte. `minidc.py` uses it to refuse an image built for the other board, and
+checks the image size, before the board leaves its application.
 
 **Image marker:** the last page of user flash (0x3FC0 on the CH32V003, 0x7F00
 on the CH32V005) holds three 32-bit words: 0x3143444D ("MDC1"), image length,
@@ -182,7 +196,9 @@ the option bytes of a real part and set START_MODE (bit 5 of the USER byte),
 keeping the rest.
 
 A board with only the application (no bootloader, START_MODE clear) also
-works; it just cannot be updated over I2C.
+works; it just cannot be updated over I2C. The application looks for the
+bootloader's signature word in the boot area and refuses ENTER_BOOT without
+it.
 
 - **CH32V003:** SWIO is on TP1 and always available, except while the identify
   LED is lit, because the LED pulls that pin low.
@@ -193,7 +209,9 @@ works; it just cannot be updated over I2C.
   worked out on a real board, and the window length (`BOOT_WINDOW_MS` in
   `common/board.h`) adjusted to suit. Keep the hub quiet on that bus for the
   first second after power-on: I2C clock pulses on SWIO in that time could be
-  taken for debug traffic.
+  taken for debug traffic. The same applies to the board upstream if a
+  CH32V005 restarts on its own (watchdog or reset pin) while it is being
+  polled.
 
 ## Hub side
 
@@ -258,8 +276,10 @@ On a PC, in CI:
   out-of-order chunks, an interrupted update, the largest image and a blank
   board.
 - `minidc.py` drives that simulated chain through scans, sweeps, single and
-  whole-chain updates with the real application binaries, starting held
-  boards, and a check that `-full.bin` images pass the bootloader's own test.
+  whole-chain updates with the real application binaries (the whole-chain
+  one with one hub read in seven damaged), refusing oversize and wrong-MCU
+  images, starting held boards, and a check that `-full.bin` images pass the
+  bootloader's own test.
 - The thermistor table against the formula.
 
 Not tested, because there is no hardware yet:
@@ -270,6 +290,9 @@ Not tested, because there is no hardware yet:
   minichlink's; on the CH32V005 it loads a 256-byte page over four commands),
   the ADC, entering and leaving the boot area, the watchdog, sleep.
 - The CH32V005 programming window, and its option bytes.
+- Timing. The simulated bootloader answers at once, so the "not acknowledged
+  while writing flash" path and the time a COMMIT takes (the image CRC is
+  estimated at 0.4 s for a full CH32V005) are not exercised.
 - Behaviour of a real hub.
 
 This firmware is for the relay fitting only. With R3/R4 fitted (shared bus)

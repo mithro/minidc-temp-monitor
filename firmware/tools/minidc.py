@@ -31,6 +31,7 @@ MAX_FRAME = 4 + MAX_PAYLOAD + 2
 CHUNK = 64
 TEMPS_MAX = 16
 MARKER_MAGIC = 0x3143444D
+APP_TAG = b'MDC-APP:'
 
 CMD_INFO, CMD_TEMPS, CMD_LED = 0x01, 0x02, 0x03
 CMD_ENTER_BOOT, CMD_WRITE, CMD_COMMIT, CMD_BOOT = 0x10, 0x11, 0x12, 0x13
@@ -111,13 +112,14 @@ class Info:
         self.app_ok = bool(self.flags & 0x01) if self.in_bootloader else True
         self.sensor_ok = bool(self.flags & 0x02) if not self.in_bootloader else None
         self.led_on = bool(self.flags & 0x04) if not self.in_bootloader else None
+        self.has_bootloader = True if self.in_bootloader else bool(self.flags & 0x08)
         self.page = self.page_chunks * CHUNK
         self.mcu_name = MCUS.get(self.mcu, (f'type {self.mcu}',))[0]
 
     def __str__(self):
         where = 'bootloader' if self.in_bootloader else 'application'
         extra = ('' if self.app_ok else ', no valid application') if self.in_bootloader else \
-            ('' if self.sensor_ok else ', thermistor fault')
+            ('' if self.sensor_ok else ', thermistor fault') + ('' if self.has_bootloader else ', no bootloader')
         return f'{self.mcu_name} {where} v{self.major}.{self.minor}{extra}'
 
 
@@ -133,7 +135,7 @@ class Chain:
         self.seq = 0
         self.retries = retries
         self.hop_s = 2 * MAX_FRAME * 9 / dn_hz + 0.03
-        self.base_s = 0.6
+        self.base_s = 1.0
 
     def _once(self, hop, cmd, payload, depth):
         self.seq = (self.seq + 1) & 0xFF
@@ -144,13 +146,14 @@ class Chain:
             self.t.sleep(poll)
             poll = min(poll * 2, 0.05)
             f = self.t.read(MAX_FRAME)
-            if f and len(f) >= 6 and f[0] != ST_BUSY and f[3] <= MAX_PAYLOAD:
+            damaged = False
+            if f and len(f) >= 6 and f[0] != ST_BUSY:
                 total = 4 + f[3] + 2
-                if seal(f[:total - 2]) == f[:total] and f[1] == self.seq:
+                if f[3] <= MAX_PAYLOAD and seal(f[:total - 2]) == f[:total] and f[1] == self.seq:
                     return f[0], f[2], bytes(f[4:4 + f[3]])
-                raise ChainError('damaged reply')
+                damaged = True      # the board keeps its reply: read it again
             if self.t.now() > deadline:
-                raise ChainError('no reply in time')
+                raise ChainError('damaged reply' if damaged else 'no reply in time')
 
     def request(self, hop, cmd, payload=b'', depth=None, retry=True):
         """Send one command to the board at position hop (0 = nearest).
@@ -215,45 +218,62 @@ class Chain:
 
     def led(self, hop, mode, seconds=0):
         """Identify LED: mode 'off', 'on' or 'blink'; seconds 0 = until changed."""
+        if not 0 <= seconds <= 255:
+            raise ChainError('seconds must be 0 to 255')
         self.request(hop, CMD_LED, bytes([LED_MODES[mode], seconds]))
 
     def enter_bootloader(self, hop):
-        if not self.info(hop).in_bootloader:
-            self.request(hop, CMD_ENTER_BOOT, retry=False)
-            self.t.sleep(0.05)
-        info = self._wait_mode(hop, MODE_BOOT)
-        return info
+        info = self.info(hop)
+        if info.in_bootloader:
+            return info
+        if not info.has_bootloader:
+            raise ChainError(f'board {hop} has no I2C bootloader')
+        return self._switch(hop, CMD_ENTER_BOOT, MODE_BOOT)
 
     def start_application(self, hop):
         info = self.info(hop)
-        if info.in_bootloader:
-            self.request(hop, CMD_BOOT, retry=False)
-            # A CH32V005 waits for its programming window before it answers.
-            self.t.sleep(0.1)
-            info = self._wait_mode(hop, MODE_APP)
-        return info
+        if not info.in_bootloader:
+            return info
+        return self._switch(hop, CMD_BOOT, MODE_APP)
 
-    def _wait_mode(self, hop, mode):
+    def _switch(self, hop, cmd, mode):
+        """Send a mode change and wait for it.  The board restarts once it
+        has seen its reply read, so a lost reply does not mean it failed:
+        look at the mode, and ask again if it has not changed."""
         last = None
-        for _ in range(20):
+        for _ in range(4):
             try:
-                info = self.info(hop)
+                self.request(hop, cmd, retry=False)
+            except ChainError as e:
+                if e.status not in (None, ST_BAD_CRC, ST_TIMEOUT, ST_LINK):
+                    raise
+                last = e
+            for _ in range(10):
+                self.t.sleep(0.1)
+                try:
+                    info = self.info(hop)
+                except ChainError as e:
+                    last = e
+                    continue
                 if info.mode == mode:
                     return info
                 last = ChainError(f'board {hop} did not change mode')
-            except ChainError as e:
-                last = e
-            self.t.sleep(0.1)
         raise last
 
     def update(self, hop, image, progress=None):
         """Write a new application to the board at hop and start it.  The
         boards behind it are out of reach until it is running again."""
-        info = self.enter_bootloader(hop)
-        size, page = MCUS[info.mcu][1:]
+        info = self.info(hop)
+        if info.mcu not in MCUS:
+            raise ChainError(f'board {hop}: unknown MCU type {info.mcu}')
+        name, size, page = MCUS[info.mcu]
+        tag = image_mcu(image)
+        if tag is not None and tag != info.mcu:
+            raise ChainError(f'board {hop} is a {name}, the image is for {MCUS.get(tag, (tag,))[0]}')
         image = pad_image(image, page)
         if len(image) > size - page:
             raise ChainError('image too large for this board')
+        self.enter_bootloader(hop)
         for base in range(0, len(image), page):
             for attempt in range(4):
                 try:
@@ -288,6 +308,12 @@ class Chain:
                     break
                 self.start_application(hop)
         return stuck
+
+
+def image_mcu(image):
+    """MCU type an application image was built for, from its tag, or None."""
+    i = bytes(image).find(APP_TAG)
+    return image[i + len(APP_TAG)] if 0 <= i < len(image) - len(APP_TAG) else None
 
 
 def pad_image(image, page):

@@ -43,7 +43,8 @@ uint32_t plat_millis(void *ctx);
 void     plat_sensor(void *ctx, int16_t *centi_c, uint16_t *raw);
 void     plat_led(void *ctx, uint8_t mode, uint8_t seconds);
 uint8_t  plat_flags(void *ctx);                                 /* MDC_INFO_F_... */
-void     plat_enter_boot(void *ctx);                            /* once the reply has been read */
+int      plat_enter_boot(void *ctx);                            /* 0 if there is no bootloader; else
+                                                                   restarts once the reply is read */
 
 void relay_init(struct relay *r, void *ctx, uint8_t mcu, uint8_t page_chunks,
 		uint16_t hop_ms, uint16_t base_ms);

@@ -93,18 +93,16 @@ static void boot_handle(struct boot *b, uint8_t n)
 				st = MDC_ST_BAD_ARG;
 				break;
 			}
+			if ((w0 & (BOOT_PAGE - 1)) != 0 && w0 != b->next) {
+				st = MDC_ST_BAD_ARG;    /* chunks of a page must come in order */
+				break;
+			}
 			if (b->app_ok) {            /* the old image stops being valid here */
 				fl_erase(BOOT_APP_LIMIT);
 				b->app_ok = 0;
 			}
-			if ((w0 & (BOOT_PAGE - 1)) == 0) {
+			if ((w0 & (BOOT_PAGE - 1)) == 0)
 				fl_begin(w0);
-				b->next = (uint16_t)w0;
-			}
-			if (w0 != b->next) {        /* chunks of a page must come in order */
-				st = MDC_ST_BAD_ARG;
-				break;
-			}
 			{
 				const uint32_t *d = (const uint32_t *)(const void *)(f + MDC_CMD_HDR + 2);
 
@@ -133,7 +131,13 @@ static void boot_handle(struct boot *b, uint8_t n)
 				fl_load(BOOT_APP_LIMIT + i,
 					i == 0 ? MDC_MARKER_MAGIC : i == 4 ? w0 : i == 8 ? w1 : 0xFFFFFFFFu);
 			fl_commit(BOOT_APP_LIMIT);
-			b->app_ok = (uint8_t)boot_app_valid();
+			{
+				/* The image was checked just above; read the marker back. */
+				const struct boot_marker *m =
+					(const struct boot_marker *)(const void *)fl_ptr(BOOT_APP_LIMIT);
+
+				b->app_ok = m->magic == MDC_MARKER_MAGIC && m->len == w0 && m->crc == w1;
+			}
 			if (!b->app_ok)
 				st = MDC_ST_FLASH;
 			break;

@@ -14,6 +14,7 @@
 
 #define BOARD_MCU          MDC_MCU_CH32V003
 #define BOARD_FLASH_SIZE   16384u
+#define BOOT_AREA_ADDR     0x1FFFF000u
 #define BOARD_PAGE         64u
 #define BOARD_ADC_BITS     10
 
@@ -35,7 +36,7 @@
 #define LED_PORT           GPIOD      /* PD4, bonded with SWIO (PD1) on pin 8 */
 #define LED_PIN            4
 
-#define BOARD_RCC          (RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOD)
+#define BOARD_RCC          (RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOD | RCC_APB2Periph_AFIO)
 
 /* SWIO has its own pin, so no programming window is needed. */
 #define SWIO_SHARED        0
@@ -45,6 +46,7 @@
 
 #define BOARD_MCU          MDC_MCU_CH32V005
 #define BOARD_FLASH_SIZE   32768u
+#define BOOT_AREA_ADDR     0x1FFF0000u
 #define BOARD_PAGE         256u
 #define BOARD_ADC_BITS     12
 
