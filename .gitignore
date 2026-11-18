@@ -46,3 +46,6 @@ fp-info-cache
 __pycache__/
 hardware/*/out/gerbers/
 !hardware/*/out/*.csv
+
+# Firmware build output
+firmware/build/

@@ -2,8 +2,9 @@
 
 A small pass-through board for a chain of temperature sensors on a Qwiic style
 (JST SH 4-pin) I2C cable. Each board carries a WCH RISC-V microcontroller that
-reads a 100 k NTC thermistor and answers on I2C, so boards can assign their own
-addresses instead of using strap resistors.
+reads a 100 k NTC thermistor and answers on I2C. A board's address is its
+position in the chain, so there are no strap resistors. The firmware is in
+[../firmware/](../firmware/README.md).
 
 There are two versions of the same board, differing only in the microcontroller:
 
@@ -169,9 +170,9 @@ Needs KiCad 9 (`kicad-cli` and the `pcbnew` Python module) and numpy.
 
 ## Known gaps in v0.1
 
-- No firmware yet. The default fitting depends on relay firmware. Self-addressing,
-  the relay mode and the CH32V005 programming window on the shared SCL/SWIO pin
-  are untested ideas until there is some.
+- The [firmware](../firmware/README.md) has not run on a board. The relay, the
+  bootloader and the CH32V005 programming window on the shared SCL/SWIO pin
+  are tested in simulation only.
 - Running without R5 and R6 is untested. Try a few boards with them removed
   before leaving them off a whole build.
 - The routing is machine-made and passes DRC, but has not been tidied by hand.
