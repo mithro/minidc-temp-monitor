@@ -95,7 +95,7 @@ straight through to the next board, so one chain runs at one voltage.
   to 3.3 V, because both microcontrollers read 3.3 V as high at VDD = 5 V
   (input high threshold about 2.1 V on the CH32V003 and 2.2 V on the
   CH32V005). That relies on the boards never driving SDA or SCL high, so
-  firmware must keep the I2C pins open-drain. Do not pull the bus up to 5 V on
+  firmware must only ever pull the upstream I2C pins low or release them. Do not pull the bus up to 5 V on
   a 3.3 V chain.
 - No signal may go above VDD. The CH32V005 has no 5 V tolerant pins, and on the
   CH32V003 only the upstream I2C pins are. Set the debug probe to the chain
@@ -154,9 +154,13 @@ Needs KiCad 9 (`kicad-cli` and the `pcbnew` Python module) and numpy.
   high before sampling, so C3 has settled.
 - CH32V003: the LED sits on the SWIO pin. Light it by driving PD4 or PD5 low and
   leave PD1 as SWIO. Pin 1 is PD6 and PA1 bonded together, so keep PD6 an input.
-- R5 and R6 are optional, so firmware must turn on the internal pull-ups of
-  the downstream SDA and SCL pins and pick the downstream bit rate to suit:
-  about 10 kHz on internal pull-ups alone, up to 100 kHz with R5 and R6.
+- R5 and R6 are optional, so in relay mode firmware must work the downstream
+  SDA and SCL pins without them: release a line by making the pin an input with
+  its pull-up on, and drive it by making the pin an output held low. The
+  internal pull-up only exists in input mode. Pick the downstream bit rate to
+  suit: 10 to 20 kHz on internal pull-ups alone, up to 100 kHz with R5 and R6.
+  Keep the pull-ups off on the upstream pins, and on every bus pin in
+  shared-bus mode, so the only pull-ups there are the ones on the hub.
 - CH32V003: the ADC and flash writes want VDD of 2.8 V or more, and ADC accuracy
   is only specified above 2.9 V. Watch the drop on long chains, mainly at 3.3 V.
 - The allowed ADC speed depends on VDD. Keep the CH32V003 ADC clock at 6 MHz or
