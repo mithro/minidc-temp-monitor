@@ -6,10 +6,12 @@
 Reads PROJECT_DIR/<name>.kicad_pcb and writes <name>-panel.kicad_pcb next to it,
 plus PROJECT_DIR/out/panel/bom-jlc.csv from the single-board BOM.
 
-The panel is a grid of boards inside a frame of 5 mm rails.  Boards are held by
-break-off tabs with mouse-bite holes on their long edges, at the positions set
-in layout.py, and are free on the short edges where the connectors are.  The
-rails carry three fiducials and four tooling holes.  Every part keeps its
+The panel is two columns of boards in a frame of 5 mm rails, with a 5 mm rail
+between the columns.  Each board is held by six break-off tabs with mouse-bite
+holes, at the positions set in layout.py: two on each long edge to the boards
+above and below, and one at the top corner of each short edge, clear of the
+connector, to the rail beside it.  The rails carry three fiducials and four
+tooling holes.  Every part keeps its
 designator with the board number added, for example R5_07.
 
 Copper is copied as it is on the single board, pours included, so the panel is
@@ -31,14 +33,15 @@ RAIL = 5.0                  # frame width
 GAP = 2.0                   # routed slot between boards, and between boards and frame
 BITE_DRILL = 0.6            # mouse-bite hole
 BITE_PITCH = 1.0            # 0.4 mm of board left between holes
-BITE_INSET = 0.25           # hole centres this far inside the board edge, so the stubs sit below it
+BITE_INSET = 0.05           # hole centres this far inside the board edge, so the stubs do not stand proud
 TOOLING_DRILL = 1.152
 TOOLING_AT = 2.5            # tooling hole centre from both panel edges
-FIDUCIAL_AT = (10.0, 3.85)  # fiducial centre from the short and the long panel edge
+FIDUCIAL_AT = (10.0, 2.5)   # fiducial centre along a top or bottom rail, and across it (the middle)
 ORIGIN = (50.0, 30.0)       # panel's top left corner on the sheet
 BOARD_ORIGIN = (100.0, 100.0)
 
-PANEL_W = 2 * RAIL + GAP + COLS * (L.LEN + GAP)
+PITCH_X = L.LEN + 2 * GAP + RAIL            # a rail between every two columns
+PANEL_W = RAIL + COLS * PITCH_X
 PANEL_H = 2 * RAIL + GAP + ROWS * (L.W + GAP)
 
 
@@ -57,7 +60,7 @@ def rect(x0, y0, x1, y1):
 
 def board_at(col, row):
     """Top left corner of a board on the panel."""
-    return RAIL + GAP + col * (L.LEN + GAP), RAIL + GAP + row * (L.W + GAP)
+    return RAIL + GAP + col * PITCH_X, RAIL + GAP + row * (L.W + GAP)
 
 
 def hole(board, x, y, drill, mask_margin=0.0):
@@ -113,7 +116,9 @@ def build(pdir):
     outline = pcbnew.SHAPE_POLY_SET()
     src.GetBoardPolygonOutlines(outline)
     substrate = rect(0, 0, PANEL_W, PANEL_H)
-    substrate.BooleanSubtract(rect(RAIL, RAIL, PANEL_W - RAIL, PANEL_H - RAIL))
+    for col in range(COLS):                 # one window per column of boards
+        x = board_at(col, 0)[0]
+        substrate.BooleanSubtract(rect(x - GAP, RAIL, x + L.LEN + GAP, PANEL_H - RAIL))
 
     nets = {}
     def net(old, n):
@@ -167,6 +172,13 @@ def build(pdir):
                 for i in range(int(round(L.TAB_WIDTH / BITE_PITCH)) + 1):
                     for y in (by + BITE_INSET, by + L.W - BITE_INSET):
                         hole(panel, x0 + i * BITE_PITCH, y, BITE_DRILL)
+            # One tab from each short edge to the rail beside it.
+            y0, y1 = by + L.END_TAB - L.END_TAB_WIDTH / 2, by + L.END_TAB + L.END_TAB_WIDTH / 2
+            substrate.BooleanAdd(rect(bx - GAP - 0.01, y0, bx + 0.01, y1))
+            substrate.BooleanAdd(rect(bx + L.LEN - 0.01, y0, bx + L.LEN + GAP + 0.01, y1))
+            for i in range(int(round(L.END_TAB_WIDTH / BITE_PITCH)) + 1):
+                for x in (bx + BITE_INSET, bx + L.LEN - BITE_INSET):
+                    hole(panel, x, y0 + i * BITE_PITCH, BITE_DRILL)
 
     substrate.Simplify()
     for i in range(substrate.OutlineCount()):

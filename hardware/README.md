@@ -54,14 +54,17 @@ How the copper is laid out:
 - R3 to R6 are 0603 so that each can bridge a track on the top layer. That is
   what keeps the back plane whole.
 - Copper stays 0.5 mm from every board edge, and 1.0 mm back where the panel
-  tabs attach.
+  tabs attach. `gen_pcb.py` checks the pour against the edge on every build,
+  because KiCad's DRC does not.
+- The CH32V005's only ground is its exposed pad. It has one via in a corner of
+  the pad, and solder paste on the rest (60 % of the pad).
 - Fabrication class: 0.2 mm tracks, 0.6/0.3 mm vias (0.5/0.3 mm under the
   CH32V005), which is JLCPCB's cheapest two-layer class.
 
 ## Panel
 
 JLCPCB assembles small boards as a panel. `scripts/gen_panel.py` builds one for
-each version: 16 boards (2 x 8) in a 100 x 132 mm frame, so 13 panels give 208
+each version: 16 boards (2 x 8) in a 107 x 132 mm frame, so 13 panels give 208
 boards.
 
 | | Panel board | Gerbers | Parts list | Placement | Check |
@@ -73,11 +76,11 @@ boards.
 
 | | |
 |---|---|
-| Frame | 5 mm rails on all four sides |
+| Frame | 5 mm rails on all four sides and a 5 mm rail between the two columns |
 | Between boards | 2 mm routed slots |
-| Tabs | four per board, 5 mm wide, on the long edges 7.0 and 37.5 mm from the J1 end. None on the short edges, where the connectors are |
-| Mouse bites | six 0.6 mm holes per tab edge on 1.0 mm pitch, centred 0.25 mm inside the board edge so the stubs break off below the edge |
-| Fiducials | three on the rails, 1 mm copper in a 2 mm mask opening, 3.85 mm from the long panel edge |
+| Tabs | six per board. Four are 5 mm wide, on the long edges 7.0 and 37.5 mm from the J1 end, to the boards above and below. Two are 2 mm wide, at the top corner of each short edge clear of the connector, to the rail beside the board |
+| Mouse bites | 0.6 mm holes on 1.0 mm pitch along each tab's board edge, centred 0.05 mm inside the edge, 0.65 mm or more from copper |
+| Fiducials | three on the top and bottom rails, 1 mm copper in a 2 mm mask opening, in the middle of the rail |
 | Tooling holes | four, 1.152 mm, unplated, 2.5 mm from the panel corners |
 | Designators | each part's own designator plus the board number, for example `R5_07` |
 
@@ -239,6 +242,15 @@ Needs KiCad 9 (`kicad-cli` and the `pcbnew` Python module), Pillow and zip.
   before leaving them off a whole build.
 - The placement file rotations have not been checked against JLCPCB's part
   orientations. Check the preview when ordering.
+- Silkscreen text is 0.8 mm high with a 0.15 mm stroke. JLCPCB's capability
+  page asks for 1.0 mm, and there is no room for that on this board, so some
+  designators may print soft.
+- On the CH32V003 board C1, C2, C3 and R1 have no designator: there is no room
+  beside them. From the top they are R1, C3, C2, C1 in the column left of U1.
+- CH32V005: the ground via sits in the exposed pad and is open on the top
+  side, so some solder can run into it. The QFN is 0.4 mm pitch; ask JLCPCB
+  whether their standard HASL finish is acceptable for it or whether it needs
+  ENIG, which costs more. [COST.md](COST.md) assumes the standard finish.
 - The panel follows JLCPCB's published rules as far as they could be read, but
   JLCPCB has not reviewed it.
 - On the CH32V005 board the SDA line leaves J1 under the connector housing.

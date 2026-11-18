@@ -71,16 +71,16 @@ def local_models(fp):
 
 def window_paste(board, fp, vias, apertures):
     """Exposed pad with vias in it: drop the stock paste opening and paste only
-    the corners away from the vias, so solder is not drawn down the holes."""
+    the area away from the vias, so solder is not drawn down the holes."""
     for pad in list(fp.Pads()):
         if not pad.GetNumber() and pad.IsOnLayer(pcbnew.F_Paste):
             fp.Remove(pad)
     centre = fp.GetPosition()
-    for dx, dy, size in apertures:
+    for dx, dy, w, h in apertures:
         pad = pcbnew.PAD(fp)
         pad.SetAttribute(pcbnew.PAD_ATTRIB_SMD)
         pad.SetShape(pcbnew.F_Cu, pcbnew.PAD_SHAPE_RECT)
-        pad.SetSize(pcbnew.F_Cu, VECTOR2I(FromMM(size), FromMM(size)))
+        pad.SetSize(pcbnew.F_Cu, VECTOR2I(FromMM(w), FromMM(h)))
         ls = pcbnew.LSET(); ls.AddLayer(pcbnew.F_Paste)
         pad.SetLayerSet(ls)
         pad.SetPosition(VECTOR2I(centre.x + FromMM(dx), centre.y + FromMM(dy)))
@@ -242,6 +242,17 @@ def build(variant, pdir):
         box.SetWidth(FromMM(L.SILK_STROKE)); box.SetFilled(True)
         board.Add(box)
 
+    def inset(by):
+        """The board outline moved in by a distance, as one polygon."""
+        s = pcbnew.SHAPE_POLY_SET(); s.NewOutline()
+        for x, y in L.OUTLINE:
+            s.Append(P(x, y))
+        s.Deflate(FromMM(by), pcbnew.CORNER_STRATEGY_ROUND_ALL_CORNERS, FromMM(0.005))
+        return s
+    # The pour is drawn as the outline moved in by the edge clearance, so it cannot reach an edge.
+    pour_area = inset(L.EDGE)               # kept in a name: the outline below points into it
+    edge = pour_area.Outline(0)
+    pour = [edge.CPoint(i) for i in range(edge.PointCount())]
     for layer in (pcbnew.F_Cu, pcbnew.B_Cu):
         z = pcbnew.ZONE(board)
         z.SetLayer(layer); z.SetNet(net('GND'))
@@ -250,10 +261,20 @@ def build(variant, pdir):
         z.SetThermalReliefGap(FromMM(0.2)); z.SetThermalReliefSpokeWidth(FromMM(0.3))
         z.SetIslandRemovalMode(pcbnew.ISLAND_REMOVAL_MODE_ALWAYS)
         o = z.Outline(); o.NewOutline()
-        for x, y in L.POUR:
-            o.Append(FromMM(X0 + x), FromMM(Y0 + y))
+        for pt in pour:
+            o.Append(pt)
         board.Add(z)
     pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+    # The filler run from a script does not apply the board-edge rule and DRC does not test fills
+    # against the edge, so check here that no copper pour comes closer to the edge than it should.
+    limit = inset(L.EDGE - 0.01)
+    for z in board.Zones():
+        for layer in (pcbnew.F_Cu, pcbnew.B_Cu):
+            if not z.GetIsRuleArea() and z.IsOnLayer(layer):
+                over = pcbnew.SHAPE_POLY_SET(z.GetFilledPolysList(layer))
+                over.BooleanSubtract(limit)
+                if over.Area() > 0:
+                    sys.exit('pour closer than %.1f mm to the board edge' % L.EDGE)
     pcbnew.SaveBoard(pcb, board)
     if lay.get('paste_windows'):
         # A windowed paste layer makes the footprint differ from its library copy on purpose.
