@@ -60,6 +60,12 @@ including estimated fabrication and assembly fees.
 | Parts per board | $0.33 | $0.30 |
 | 200 boards assembled (estimate) | $118 | $113 |
 
+## Cables
+
+Generic double-ended JST SH 1.0 mm 4-pin leads, about $0.10 each from
+AliExpress or JLCPCB. They come wired straight or reversed, so check a sample:
+pin 1 at one end must reach pin 1 at the other.
+
 ## Supply voltage
 
 The boards run from 3.3 V or 5 V on VDD (J1/J2 pin 2) with no fitting change.
@@ -153,6 +159,9 @@ Needs KiCad 9 (`kicad-cli` and the `pcbnew` Python module) and numpy.
 - No firmware yet. The default fitting depends on relay firmware. Self-addressing,
   the relay mode and the CH32V005 programming window on the shared SCL/SWIO pin
   are untested ideas until there is some.
+- R5 and R6 may be unnecessary. Both microcontrollers have internal pull-ups of
+  35 to 55 k, enough for roughly 10 to 20 kHz on a short hop. Test a few boards
+  with R5 and R6 removed before leaving them off a later build.
 - The routing is machine-made and passes DRC, but has not been tidied by hand.
 - No reference designators on the silkscreen.
 - The placement file rotations have not been checked against JLCPCB's part
