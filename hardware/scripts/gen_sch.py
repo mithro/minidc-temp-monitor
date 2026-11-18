@@ -26,10 +26,10 @@ FP_TP = 'TestPoint:TestPoint_Pad_D1.0mm'
 COMMON_PARTS = {
     'J1': ('Connector_Generic_MountingPin', 'Conn_01x04_MountingPin', 'Qwiic UP', FP_J, 'C7430446', False),
     'J2': ('Connector_Generic_MountingPin', 'Conn_01x04_MountingPin', 'Qwiic DOWN', FP_J, 'C7430446', False),
-    'R3': ('Device', 'R', '0R', FP_R, 'C17168', False),
-    'R4': ('Device', 'R', '0R', FP_R, 'C17168', False),
-    'R5': ('Device', 'R', '4k7', FP_R, 'C25900', True),
-    'R6': ('Device', 'R', '4k7', FP_R, 'C25900', True),
+    'R3': ('Device', 'R', '0R', FP_R, 'C17168', True),
+    'R4': ('Device', 'R', '0R', FP_R, 'C17168', True),
+    'R5': ('Device', 'R', '4k7', FP_R, 'C25900', False),
+    'R6': ('Device', 'R', '4k7', FP_R, 'C25900', False),
     'R1': ('Device', 'R', '100k 1%', FP_R, 'C25741', False),
     'RT1': ('Device', 'Thermistor_NTC', '100k B3950 1%', FP_R, 'C6807762', False),
     'C3': ('Device', 'C', '100n', FP_C, 'C1525', False),
@@ -91,9 +91,9 @@ VARIANTS = {
 
 GENERAL_NOTES = [
     'Chain wiring is a build option:',
-    '  Shared bus (default): fit R3 and R4 (0R).  Leave R5 and R6 unfitted.',
-    '  Relay: leave R3 and R4 unfitted.  Fit R5 and R6 (4k7) as the downstream pull-ups.',
-    'No bus pull-ups are fitted in shared-bus mode.  They belong on the hub.',
+    '  Relay (default): R5 and R6 (4k7) fitted as the pull-ups of the hop to the next board.  R3 and R4 unfitted.',
+    '  Shared bus: fit R3 and R4 (0R) and remove R5 and R6.  The only pull-ups are then the ones on the hub.',
+    'The hop from the hub to the first board uses the pull-ups on the hub.',
 ]
 POWER = ('VDD', 'GND')
 
@@ -335,8 +335,8 @@ def draw(variant, project):
     s.label('SDA_DN', 152.4, 55.88, (1, 0)); s.label('SCL_DN', 152.4, 58.42, (1, 0))
     s.stub(r5['1'], 2.54, 'VDD'); s.stub(r6['1'], 2.54, 'VDD')
     s.wire(r5['2'][:2], (132.08, 55.88)); s.wire(r6['2'][:2], (144.78, 58.42))
-    s.text('Shared bus (default): fit R3 and R4', 86.36, 69.85)
-    s.text('Relay: fit R5 and R6 instead', 152.4, 35.56)
+    s.text('Shared bus: fit R3 and R4 instead', 86.36, 69.85)
+    s.text('Relay (default): R5 and R6 fitted', 152.4, 35.56)
 
     # --- Microcontroller ------------------------------------------------------------------------
     s.frame('Microcontroller', 20.32, 83.82, 109.22, 147.32)
