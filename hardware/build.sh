@@ -1,9 +1,10 @@
 #!/bin/sh
 # Regenerate both sensor boards from the scripts and export the review and
 # ordering files.  Needs KiCad 9 (kicad-cli and the pcbnew Python module).
-#   ./build.sh           regenerate schematics, boards and exports
+#   ./build.sh           regenerate schematics, boards, panels and exports
+#   ./build.sh export    only redo the exports from the board files as they are
+#                        (the panel BOM is written by the full build)
 # Both forms finish by rewriting COST.md with scripts/cost.py.
-#   ./build.sh export    only redo the exports from the files as they are
 set -e
 cd "$(dirname "$0")"
 case "$1" in ""|export) ;; *) echo "usage: $0 [export]" >&2; exit 2 ;; esac
@@ -15,6 +16,7 @@ for v in ch32v003 ch32v005; do
         python3 scripts/gen_sch.py $v $p.kicad_sch
         python3 scripts/gen_pcb.py $v sensor-$v
     fi
+    rm -rf $out/gerbers $out/panel/gerbers
     mkdir -p $out
     kicad-cli sch erc --severity-all --exit-code-violations -o $out/erc.rpt $p.kicad_sch
     kicad-cli pcb drc --schematic-parity --severity-all --exit-code-violations -o $out/drc.rpt $p.kicad_pcb

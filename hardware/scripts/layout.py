@@ -30,7 +30,7 @@ HOLE = (11.5, 6.5)
 HOLE_KEEPOUT = (*HOLE, 3.6)     # 7 mm washer plus margin: no copper at all on either layer
 FINGER = [(25.0, -0.5), (33.4, -0.5), (33.4, 2.9), (25.0, 2.9)]   # no pour around the thermistor
 
-# Panel tabs: each board hangs from four break-off tabs, two on each long edge at these x positions.
+# Panel tabs: each board hangs from six break-off tabs.  Two on each long edge at these x positions.
 # The pour stays TAB_CLEAR back from the edge there, so the mouse-bite holes never touch copper.
 # A narrower tab at the top corner of each short edge, clear of the connector, ties the board to
 # the panel's side and centre rails.
@@ -94,7 +94,7 @@ LAYOUT['ch32v003'] = dict(
         ('VDD', 'F', PWR, [(20.48, 6.14), 'TP2.1']),
         ('GND', 'F', PWR, ['C1.2', 'C2.2', 'C3.2', (21.5, 7.165), 'U1.2', (24.7, 7.165)]),
         ('GND', 'F', PWR, ['TP3.1', (18.8, 4.87)]),
-        ('GND', 'F', PWR, ['C2.2', (22.0, 7.75)]),
+        ('GND', 'F', PWR, ['C2.2', (22.15, 7.66)]),
         # thermistor node
         ('NTC_ADC', 'F', SIG, ['R1.2', 'C3.1', (21.5, 5.895), 'U1.1', (23.225, 5.4), (23.875, 4.75), (33.25, 4.75)] + FINGER_ADC),
         # upstream I2C, along the bottom and up the right side of the package
@@ -115,7 +115,7 @@ LAYOUT['ch32v003'] = dict(
                             (17.95, 8.68), (17.65, 8.38), (17.65, 1.85), (18.0, 1.5), 'D1.1']),
         ('Net-(D1-A)', 'F', SIG, ['D1.2', 'R2.2']),
     ],
-    vias=J_VIAS + [('VDD', *V003_TAP), ('GND', 24.7, 7.165), ('GND', 22.0, 7.75), ('GND', 18.8, 4.87), ('GND', 34.3, 1.5)],
+    vias=J_VIAS + [('VDD', *V003_TAP), ('GND', 24.7, 7.165), ('GND', 22.15, 7.66), ('GND', 18.8, 4.87), ('GND', 34.3, 1.5)],
     stitch=[(2.0, 6.5), (3.5, 2.5), (1.5, 11.9), (8.5, 2.4), (13.0, 2.2), (15.5, 4.9), (15.5, 7.4), (12.0, 12.1),
             (22.9, 3.7), (29.7, 6.4), (30.6, 6.1), (24.0, 12.1), (34.5, 9.5), (36.5, 10.6), (40.8, 11.4), (37.5, 3.2), (40.6, 1.6)],
     labels={'J1': (0, 4.4, 0, 'J1 UP'), 'J2': (0, -4.3, 0, 'J2 DN'), 'U1': (0, 3.5),
@@ -196,7 +196,7 @@ LAYOUT['ch32v005'] = dict(
     labels={'J1': (0, 4.4, 0, 'J1 UP'), 'J2': (0, -4.3, 0, 'J2 DN'),
             'U1': (0, -2.3), 'C1': (-0.45, 1.45), 'C2': (0.1, -0.97), 'D1': (0.4, 1.4), 'R2': (1.3, 0.9),
             'R1': (-0.5, 1.55), 'C3': (-0.15, 1.55), 'R3': (-0.6, -1.15), 'R4': (0, 1.2), 'R5': (1.35, 0.45), 'R6': (-1.7, 0.4),
-            'TP4': (0, -1.3, 0, 'RST'), 'TP5': (-1.8, 0, 0, 'PA1'), 'TP6': (1.85, 0, 0, 'PC7'),
+            'TP4': (0, -1.3, 0, 'RST'), 'TP5': (-1.95, 0, 0, 'PA1'), 'TP6': (2.0, 0, 0, 'PC7'),
             'RT1': (1.7, 0), 'TP1': (-3.0, 0, 0, 'SWIO'), 'TP2': (-2.8, 0, 0, 'VDD'), 'TP3': (-2.8, 0, 0, 'GND')},
     silk=[('minidc-temp v0.2', 7.0, 1.3, 'F', 0.8, 0), ('CH32V005', 8.6, 11.9, 'F', 0.8, 0),
           ('CH32V005', 21.0, 6.0, 'B', 1.0, 0)] + BACK_SILK,

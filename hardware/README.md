@@ -16,7 +16,7 @@ There are two versions of the same board, differing only in the microcontroller:
 | Thermistor divider | fed from VDD, read on PA1 (pin 1, shared with PD6) | fed from PC6 while sampling, read on PC4 |
 | Identify LED | shares the SWIO pin (PD1/PD4/PD5) | PA2 |
 | Programming | SWIO test pad TP1 | SWIO is the SCL pin, so J1 pin 4 or TP1 |
-| Spare pins | none | PA1, PC7 and reset on 1 mm pads (A1, C7, RST) |
+| Spare pins | none | PA1, PC7 and reset on 1 mm pads (PA1, PC7, RST) |
 
 ## Schematic and board
 
@@ -39,7 +39,7 @@ dimensions on them are read from the board, not typed in.
 | J1 (UP), J2 (DN) | JST SH 1.0 mm 4-pin, side entry, facing out of the short edges. Pin 1 GND, 2 VDD, 3 SDA, 4 SCL |
 | Mounting hole | 3.2 mm for M3, 11.5 mm from the J1 end, on the centre line, with a 7.2 mm copper-free washer area on both sides |
 | Zip-tie waist | 3.0 mm wide, 1.2 mm deep notch in each long edge, 14 to 17 mm from the J1 end |
-| Thermistor finger | 2.6 mm wide, 8.5 mm long, cut free by a 1.5 mm slot, no copper pour, RT1 near the tip |
+| Thermistor finger | 2.6 mm wide, 7.0 mm long, cut free by a 1.5 mm slot, no copper pour, RT1 near the tip |
 | Test pads | GND, VDD and SWIO: 1.5 mm pads in a column on 2.54 mm pitch, to take a 3-pin pogo clip or header |
 | Back | board name and revision, the two chain fittings, and a white box to write the board's address on |
 
@@ -65,7 +65,7 @@ How the copper is laid out:
 
 JLCPCB assembles small boards as a panel. `scripts/gen_panel.py` builds one for
 each version: 16 boards (2 x 8) in a 107 x 132 mm frame, so 13 panels give 208
-boards.
+boards. The cost estimate uses a round 200.
 
 | | Panel board | Gerbers | Parts list | Placement | Check |
 |---|---|---|---|---|---|
@@ -79,7 +79,7 @@ boards.
 | Frame | 5 mm rails on all four sides and a 5 mm rail between the two columns |
 | Between boards | 2 mm routed slots |
 | Tabs | six per board. Four are 5 mm wide, on the long edges 7.0 and 37.5 mm from the J1 end, to the boards above and below. Two are 2 mm wide, at the top corner of each short edge clear of the connector, to the rail beside the board |
-| Mouse bites | 0.6 mm holes on 1.0 mm pitch along each tab's board edge, centred 0.05 mm inside the edge, 0.65 mm or more from copper |
+| Mouse bites | 0.6 mm holes on 1.0 mm pitch along each tab's board edge, centred 0.05 mm inside the edge, 0.6 mm or more from copper |
 | Fiducials | three on the top and bottom rails, 1 mm copper in a 2 mm mask opening, in the middle of the rail |
 | Tooling holes | four, 1.152 mm, unplated, 2.5 mm from the panel corners |
 | Designators | each part's own designator plus the board number, for example `R5_07` |
@@ -116,7 +116,7 @@ including estimated fabrication and assembly fees.
 | | `sensor-ch32v003` | `sensor-ch32v005` |
 |---|---|---|
 | Parts per board | $0.33 | $0.30 |
-| 200 boards assembled (estimate) | $118 | $113 |
+| 200 boards assembled (estimate) | $118 | $114 |
 
 ## Cables
 
@@ -205,9 +205,13 @@ than editing the KiCad files by hand (hand edits are lost on the next build).
   stops if either reports anything.
 - `sensor-*/out/` holds the schematic PDF, the 3D views, gerbers, the BOM and
   placement files in JLCPCB column layout, and the ERC and DRC reports.
-  `sensor-*/out/panel/` holds the same for the panel.
+  `sensor-*/out/panel/` holds the panel's gerbers (zipped), a render, its BOM
+  and placement files and its DRC report.
+- `scripts/sexp.py` is a small reader for KiCad's file format, used by the
+  other scripts.
 
-Needs KiCad 9 (`kicad-cli` and the `pcbnew` Python module), Pillow and zip.
+Needs KiCad 9 (`kicad-cli`, the `pcbnew` Python module and the stock footprint
+library), Pillow, the DejaVu fonts and zip.
 
 ## Notes for firmware
 
