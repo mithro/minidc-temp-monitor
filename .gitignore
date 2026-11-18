@@ -47,3 +47,6 @@ __pycache__/
 !hardware/*/out/**/*.csv
 *.gbrjob
 hardware/*/out/panel/gerbers/
+
+# Firmware build output
+firmware/build/

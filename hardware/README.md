@@ -2,8 +2,9 @@
 
 A small pass-through board for a chain of temperature sensors on a Qwiic style
 (JST SH 4-pin) I2C cable. Each board carries a WCH RISC-V microcontroller that
-reads a 100 k NTC thermistor and answers on I2C, so boards can assign their own
-addresses instead of using strap resistors.
+reads a 100 k NTC thermistor and answers on I2C. A board's address is its
+position in the chain, so there are no strap resistors. The firmware is in
+[../firmware/](../firmware/README.md).
 
 There are two versions of the same board, differing only in the microcontroller:
 
@@ -120,9 +121,10 @@ including estimated fabrication and assembly fees.
 
 ## Cables
 
-Generic double-ended JST SH 1.0 mm 4-pin leads, about $0.10 each from
-AliExpress or JLCPCB. They come wired straight or reversed, so check a sample:
-pin 1 at one end must reach pin 1 at the other.
+Generic double-ended JST SH 1.0 mm 4-pin leads from AliExpress, listed at about
+$0.10 each, wired straight through: pin 1 at one end must reach pin 1 at the other.
+[CABLES.md](CABLES.md) has the order list, the lengths, how to tell the two
+wiring directions apart, and the leads for the hub end of each chain.
 
 ## Supply voltage
 
@@ -239,9 +241,9 @@ library), Pillow, the DejaVu fonts and zip.
 
 ## Known gaps in v0.2
 
-- No firmware yet. The default fitting depends on relay firmware. Self-addressing,
-  the relay mode and the CH32V005 programming window on the shared SCL/SWIO pin
-  are untested ideas until there is some.
+- The [firmware](../firmware/README.md) has not run on a board. The relay, the
+  bootloader and the CH32V005 programming window on the shared SCL/SWIO pin
+  are tested in simulation only.
 - Running without R5 and R6 is untested. Try a few boards with them removed
   before leaving them off a whole build.
 - The placement file rotations have not been checked against JLCPCB's part
