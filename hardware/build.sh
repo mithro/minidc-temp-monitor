@@ -4,7 +4,8 @@
 #   ./build.sh           regenerate schematics, boards, panels and exports
 #   ./build.sh export    only redo the exports from the board files as they are
 #                        (the panel BOM is written by the full build)
-# Both forms finish by rewriting COST.md with scripts/cost.py.
+# Both forms finish by writing the NextPCB quote files (needs openpyxl) and
+# rewriting COST.md with scripts/cost.py.
 set -e
 cd "$(dirname "$0")"
 case "$1" in ""|export) ;; *) echo "usage: $0 [export]" >&2; exit 2 ;; esac
@@ -39,4 +40,5 @@ for v in ch32v003 ch32v005; do
     kicad-cli pcb export drill --excellon-separate-th -o $out/panel/gerbers/ $p-panel.kicad_pcb
     (cd $out/panel && rm -f gerbers.zip && zip -q -j -X gerbers.zip gerbers/*)
 done
+python3 scripts/gen_nextpcb.py
 python3 scripts/cost.py > /dev/null

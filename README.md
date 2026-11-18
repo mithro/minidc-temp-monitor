@@ -28,8 +28,11 @@ not run on a board.
   command reads up to 16 temperatures, another blinks a board's identify
   LED, and boards are updated over the same cable, one at a time.
 - **Supply:** 3.3 V or 5 V, passed straight through the chain.
-- **Cost:** about $0.30 to $0.33 of parts per board, and an estimated $114
-  to $118 for 200 assembled boards. See [hardware/COST.md](hardware/COST.md).
+- **Cost:** about $0.30 to $0.33 of parts per board. 240 assembled boards
+  from JLCPCB come to about $140 with the CH32V003 and $233 with the
+  CH32V005; NextPCB quoted $529 and $651. See
+  [hardware/COST.md](hardware/COST.md) and
+  [hardware/QUOTES.md](hardware/QUOTES.md).
 - **Cables:** generic double-ended JST SH 4-pin leads from AliExpress, an
   estimated $41 plus shipping for a 200-board build, hub leads included.
   See [hardware/CABLES.md](hardware/CABLES.md).
