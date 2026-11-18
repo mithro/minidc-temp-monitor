@@ -12,8 +12,8 @@ Needs openpyxl.
 """
 import csv
 import io
+import re
 import zipfile
-from datetime import datetime
 from pathlib import Path
 
 import openpyxl
@@ -36,15 +36,17 @@ MPN = {
 
 
 def save(wb, path):
-    """Save without the creation time openpyxl would put in the file."""
-    wb.properties.created = wb.properties.modified = datetime(2000, 1, 1)
+    """Save without the times openpyxl would put in the file."""
     buf = io.BytesIO()
     wb.save(buf)
     with zipfile.ZipFile(buf) as src, zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED) as dst:
         for item in src.infolist():
             fixed = zipfile.ZipInfo(item.filename, (1980, 1, 1, 0, 0, 0))
             fixed.compress_type = zipfile.ZIP_DEFLATED
-            dst.writestr(fixed, src.read(item))
+            data = src.read(item)
+            if item.filename == 'docProps/core.xml':
+                data = re.sub(rb'\d{4}-\d\d-\d\dT[\d:.]+Z', b'2000-01-01T00:00:00Z', data)
+            dst.writestr(fixed, data)
 
 
 def write(name):
