@@ -167,7 +167,9 @@ Needs KiCad 9 (`kicad-cli` and the `pcbnew` Python module) and numpy.
 - The placement file rotations have not been checked against JLCPCB's part
   orientations. Check the preview when ordering.
 - No panel drawing yet.
-- The JST SH connector part is a compatible clone (LCSC C7430446). Its land
-  pattern has not been checked against the JST footprint used here.
+- The JST SH connector part is a compatible clone (LCSC C7430446). Its drawing
+  shows the leads and mounting tabs landing on the JST footprint used here (see the
+  [connector survey](../docs/research/jst-sh-4pin-connectors.md#land-pattern-of-the-fitted-part)),
+  but no part has been soldered to the footprint or mated with a cable yet.
 - With a metal M3 screw or standoff, only solder mask separates it from the
   ground pour around the hole.
